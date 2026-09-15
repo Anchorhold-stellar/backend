@@ -7,7 +7,7 @@ import { ListDisputesQueryDto } from './dto/list-disputes-query.dto';
 export class DisputesRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
-  async findAll(query: ListDisputesQueryDto) {
+  private buildFilter(query: ListDisputesQueryDto): { where: string; params: unknown[] } {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
@@ -16,16 +16,29 @@ export class DisputesRepository {
       conditions.push(`resolved = $${params.length}`);
     }
 
-    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-    params.push(query.limit, query.offset);
+    return { where: conditions.length ? `WHERE ${conditions.join(' AND ')}` : '', params };
+  }
+
+  async findAll(query: ListDisputesQueryDto) {
+    const { where, params } = this.buildFilter(query);
+    const listParams = [...params, query.limit, query.offset];
 
     const { rows } = await this.pool.query(
       `SELECT * FROM disputes ${where}
        ORDER BY opened_at DESC
-       LIMIT $${params.length - 1} OFFSET $${params.length}`,
-      params,
+       LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
+      listParams,
     );
     return rows;
+  }
+
+  async count(query: ListDisputesQueryDto): Promise<number> {
+    const { where, params } = this.buildFilter(query);
+    const { rows } = await this.pool.query(
+      `SELECT count(*) FROM disputes ${where}`,
+      params,
+    );
+    return Number(rows[0].count);
   }
 
   async findByEscrowId(escrowId: string) {

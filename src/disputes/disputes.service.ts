@@ -30,6 +30,10 @@ export class DisputesService {
     return this.disputes.findAll(query);
   }
 
+  count(query: ListDisputesQueryDto) {
+    return this.disputes.count(query);
+  }
+
   async findByEscrowId(escrowId: string) {
     const dispute = await this.disputes.findByEscrowId(escrowId);
     if (!dispute) {

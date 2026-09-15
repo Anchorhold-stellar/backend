@@ -6,9 +6,11 @@ import {
   Param,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { DisputesService } from './disputes.service';
 import { AddEvidenceDto } from './dto/add-evidence.dto';
 import { BuildRaiseDisputeDto } from './dto/build-raise-dispute.dto';
@@ -18,6 +20,7 @@ import { ListDisputesQueryDto } from './dto/list-disputes-query.dto';
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
 import { assertWalletMatches } from '../common/assert-wallet-match';
+import { setTotalCountHeader } from '../common/pagination';
 
 @ApiTags('disputes')
 @Controller('disputes')
@@ -25,8 +28,16 @@ export class DisputesController {
   constructor(private readonly disputes: DisputesService) {}
 
   @Get()
-  findAll(@Query() query: ListDisputesQueryDto) {
-    return this.disputes.findAll(query);
+  async findAll(
+    @Query() query: ListDisputesQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const [rows, total] = await Promise.all([
+      this.disputes.findAll(query),
+      this.disputes.count(query),
+    ]);
+    setTotalCountHeader(res, total);
+    return rows;
   }
 
   @Get(':escrowId')
