@@ -1,9 +1,19 @@
-import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { DisputesService } from './disputes.service';
 import { AddEvidenceDto } from './dto/add-evidence.dto';
 import { BuildRaiseDisputeDto } from './dto/build-raise-dispute.dto';
 import { BuildVoteDisputeDto } from './dto/build-vote-dispute.dto';
 import { BuildResolveDisputeDto } from './dto/build-resolve-dispute.dto';
+import { ListDisputesQueryDto } from './dto/list-disputes-query.dto';
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
 import { assertWalletMatches } from '../common/assert-wallet-match';
@@ -11,6 +21,11 @@ import { assertWalletMatches } from '../common/assert-wallet-match';
 @Controller('disputes')
 export class DisputesController {
   constructor(private readonly disputes: DisputesService) {}
+
+  @Get()
+  findAll(@Query() query: ListDisputesQueryDto) {
+    return this.disputes.findAll(query);
+  }
 
   @Get(':escrowId')
   findOne(@Param('escrowId') escrowId: string) {

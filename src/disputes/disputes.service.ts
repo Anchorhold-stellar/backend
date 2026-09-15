@@ -7,6 +7,7 @@ import { AddEvidenceDto } from './dto/add-evidence.dto';
 import { BuildRaiseDisputeDto } from './dto/build-raise-dispute.dto';
 import { BuildVoteDisputeDto } from './dto/build-vote-dispute.dto';
 import { BuildResolveDisputeDto } from './dto/build-resolve-dispute.dto';
+import { ListDisputesQueryDto } from './dto/list-disputes-query.dto';
 
 export type DisputeOutcome = 'renter_wins' | 'host_wins';
 
@@ -24,6 +25,10 @@ export class DisputesService {
     private readonly escrows: EscrowRepository,
     private readonly reputation: ReputationService,
   ) {}
+
+  findAll(query: ListDisputesQueryDto) {
+    return this.disputes.findAll(query);
+  }
 
   async findByEscrowId(escrowId: string) {
     const dispute = await this.disputes.findByEscrowId(escrowId);
