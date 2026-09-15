@@ -10,7 +10,7 @@ export class ListingsRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   async findAll(query: ListListingsQueryDto) {
-    const conditions: string[] = [];
+    const conditions: string[] = ['deleted_at IS NULL'];
     const params: unknown[] = [];
 
     if (query.vertical) {
@@ -22,11 +22,10 @@ export class ListingsRepository {
       conditions.push(`host_wallet = $${params.length}`);
     }
 
-    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     params.push(query.limit, query.offset);
 
     const { rows } = await this.pool.query(
-      `SELECT * FROM listings ${where}
+      `SELECT * FROM listings WHERE ${conditions.join(' AND ')}
        ORDER BY created_at DESC
        LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params,
@@ -35,7 +34,10 @@ export class ListingsRepository {
   }
 
   async findById(id: string) {
-    const { rows } = await this.pool.query(`SELECT * FROM listings WHERE id = $1`, [id]);
+    const { rows } = await this.pool.query(
+      `SELECT * FROM listings WHERE id = $1 AND deleted_at IS NULL`,
+      [id],
+    );
     return rows[0] ?? null;
   }
 
@@ -54,16 +56,19 @@ export class ListingsRepository {
          title = COALESCE($2, title),
          description = COALESCE($3, description),
          vertical = COALESCE($4, vertical)
-       WHERE id = $1 RETURNING *`,
+       WHERE id = $1 AND deleted_at IS NULL RETURNING *`,
       [id, dto.title ?? null, dto.description ?? null, dto.vertical ?? null],
     );
     return rows[0] ?? null;
   }
 
+  /** Soft delete — sets deleted_at rather than removing the row, so past
+   *  escrows that reference this listing via listing_id keep a valid FK. */
   async delete(id: string) {
-    const { rowCount } = await this.pool.query(`DELETE FROM listings WHERE id = $1`, [
-      id,
-    ]);
+    const { rowCount } = await this.pool.query(
+      `UPDATE listings SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL`,
+      [id],
+    );
     return (rowCount ?? 0) > 0;
   }
 }

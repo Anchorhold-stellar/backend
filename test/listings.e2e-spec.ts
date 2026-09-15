@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { Pool } from 'pg';
 import { Keypair } from '@stellar/stellar-sdk';
 import { AppModule } from '../src/app.module';
 import { applyGlobalMiddleware } from '../src/bootstrap';
+import { PG_POOL } from '../src/database/pg-pool.provider';
 
 /**
  * Requires a live Postgres reachable at DATABASE_URL with migrations
@@ -13,8 +15,19 @@ import { applyGlobalMiddleware } from '../src/bootstrap';
  */
 const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
 
+async function authHeaders(app: INestApplication, kp: Keypair) {
+  const challengeRes = await request(app.getHttpServer())
+    .get(`/auth/challenge?wallet=${kp.publicKey()}`)
+    .expect(200);
+  const signature = kp
+    .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
+    .toString('base64');
+  return { 'X-Wallet-Address': kp.publicKey(), 'X-Wallet-Signature': signature };
+}
+
 describeIfDb('Listings (e2e)', () => {
   let app: INestApplication;
+  let pool: Pool;
 
   beforeAll(async () => {
     process.env.ESCROW_CONTRACT_ID ??=
@@ -27,6 +40,7 @@ describeIfDb('Listings (e2e)', () => {
     app = moduleRef.createNestApplication();
     applyGlobalMiddleware(app);
     await app.init();
+    pool = app.get(PG_POOL);
   });
 
   afterAll(async () => {
@@ -46,18 +60,11 @@ describeIfDb('Listings (e2e)', () => {
 
   it('creates, lists, and fetches a listing for an authenticated wallet', async () => {
     const kp = Keypair.random();
-
-    const challengeRes = await request(app.getHttpServer())
-      .get(`/auth/challenge?wallet=${kp.publicKey()}`)
-      .expect(200);
-    const signature = kp
-      .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
-      .toString('base64');
+    const headers = await authHeaders(app, kp);
 
     const createRes = await request(app.getHttpServer())
       .post('/listings')
-      .set('X-Wallet-Address', kp.publicKey())
-      .set('X-Wallet-Signature', signature)
+      .set(headers)
       .send({ hostWallet: kp.publicKey(), title: 'A rental', vertical: 'rental' })
       .expect(201);
 
@@ -73,5 +80,37 @@ describeIfDb('Listings (e2e)', () => {
     expect(listRes.body).toHaveLength(1);
 
     await request(app.getHttpServer()).get(`/listings/${createRes.body.id}`).expect(200);
+  });
+
+  it('soft-deletes: hidden from reads, but the row and its history survive', async () => {
+    const kp = Keypair.random();
+
+    const createRes = await request(app.getHttpServer())
+      .post('/listings')
+      .set(await authHeaders(app, kp))
+      .send({ hostWallet: kp.publicKey(), title: 'to be deleted' })
+      .expect(201);
+    const id: string = createRes.body.id;
+
+    await request(app.getHttpServer())
+      .delete(`/listings/${id}`)
+      .set(await authHeaders(app, kp))
+      .expect(204);
+
+    await request(app.getHttpServer()).get(`/listings/${id}`).expect(404);
+
+    const { rows } = await pool.query(
+      `SELECT deleted_at FROM listings WHERE id = $1`,
+      [id],
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].deleted_at).not.toBeNull();
+
+    // Deleting again should 404 (the guard is deleted_at IS NULL), not
+    // silently succeed a second time.
+    await request(app.getHttpServer())
+      .delete(`/listings/${id}`)
+      .set(await authHeaders(app, kp))
+      .expect(404);
   });
 });
