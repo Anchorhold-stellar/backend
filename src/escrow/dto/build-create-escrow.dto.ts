@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { MilestoneInputDto } from './milestone-input.dto';
 
 export class BuildCreateEscrowDto {
   @ApiProperty({ description: 'Fee-paying source account for the transaction' })
@@ -17,7 +19,10 @@ export class BuildCreateEscrowDto {
   @IsNotEmpty()
   assetAddress: string;
 
-  @ApiProperty({ type: [Object], description: 'Milestone definitions passed to the contract as-is' })
+  @ApiProperty({ type: [MilestoneInputDto] })
   @IsArray()
-  milestones: unknown[];
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => MilestoneInputDto)
+  milestones: MilestoneInputDto[];
 }
