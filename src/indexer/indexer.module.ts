@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DisputesModule } from '../disputes/disputes.module';
 import { IndexerRepository } from './indexer.repository';
 import { IndexerService } from './indexer.service';
 import { MockEventsAdapter } from './adapters/mock-events.adapter';
+import { SorobanRpcEventsAdapter } from './adapters/soroban-rpc-events.adapter';
 import { SOROBAN_EVENTS_PORT } from './ports/soroban-events.port';
 
 @Module({
@@ -10,7 +12,17 @@ import { SOROBAN_EVENTS_PORT } from './ports/soroban-events.port';
   providers: [
     IndexerRepository,
     IndexerService,
-    { provide: SOROBAN_EVENTS_PORT, useClass: MockEventsAdapter },
+    MockEventsAdapter,
+    SorobanRpcEventsAdapter,
+    {
+      provide: SOROBAN_EVENTS_PORT,
+      inject: [ConfigService, MockEventsAdapter, SorobanRpcEventsAdapter],
+      useFactory: (
+        config: ConfigService,
+        mock: MockEventsAdapter,
+        live: SorobanRpcEventsAdapter,
+      ) => (config.get<string>('INDEXER_MODE') === 'live' ? live : mock),
+    },
   ],
   exports: [IndexerService],
 })
