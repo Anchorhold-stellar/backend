@@ -90,6 +90,15 @@ export class EscrowRepository {
     );
   }
 
+  async releaseMilestoneByIndex(escrowId: string, milestoneIndex: number) {
+    const { rowCount } = await this.pool.query(
+      `UPDATE milestones SET released = true, released_at = now()
+       WHERE escrow_id = $1 AND milestone_index = $2`,
+      [escrowId, milestoneIndex],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
   async allMilestonesReleased(escrowId: string) {
     const { rows } = await this.pool.query(
       `SELECT count(*) FILTER (WHERE NOT released) AS unreleased
