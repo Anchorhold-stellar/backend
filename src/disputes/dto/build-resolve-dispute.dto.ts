@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class BuildResolveDisputeDto {
@@ -7,10 +8,15 @@ export class BuildResolveDisputeDto {
    * still needs a fee-paying source account. This wallet pays the fee and
    * is not passed to the contract as an auth argument.
    */
+  @ApiProperty({
+    description:
+      'Fee-paying source account only -- resolve_dispute itself is permissionless',
+  })
   @IsString()
   @IsNotEmpty()
   callerWallet: string;
 
+  @ApiProperty()
   @IsInt()
   escrowId: number;
 }

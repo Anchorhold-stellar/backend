@@ -1,8 +1,10 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class ListDisputesQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional()
   @IsOptional()
   // class-transformer's @Type(() => Boolean) would coerce the *string*
   // "false" to `true` (any non-empty string is truthy) — parse explicitly,

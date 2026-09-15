@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { DisputesService } from './disputes.service';
 import { AddEvidenceDto } from './dto/add-evidence.dto';
 import { BuildRaiseDisputeDto } from './dto/build-raise-dispute.dto';
@@ -18,6 +19,7 @@ import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
 import { assertWalletMatches } from '../common/assert-wallet-match';
 
+@ApiTags('disputes')
 @Controller('disputes')
 export class DisputesController {
   constructor(private readonly disputes: DisputesService) {}
