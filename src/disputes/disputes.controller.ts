@@ -1,12 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { DisputesService } from './disputes.service';
 import { AddEvidenceDto } from './dto/add-evidence.dto';
 import { BuildRaiseDisputeDto } from './dto/build-raise-dispute.dto';
@@ -25,9 +17,6 @@ export class DisputesController {
   @Post(':escrowId/evidence')
   @HttpCode(201)
   addEvidence(@Param('escrowId') escrowId: string, @Body() dto: AddEvidenceDto) {
-    if (!dto.submittedBy || !dto.uri) {
-      throw new BadRequestException('submittedBy and uri are required');
-    }
     return this.disputes.addEvidence(escrowId, dto);
   }
 

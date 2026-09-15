@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  HttpCode,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { KeeperPingDto } from './dto/keeper-ping.dto';
 
@@ -25,9 +19,6 @@ export class WebhooksController {
   @Post('keeper-ping')
   @HttpCode(204)
   async keeperPing(@Body() dto: KeeperPingDto) {
-    if (dto.escrowId == null || dto.milestoneIndex == null) {
-      throw new BadRequestException('escrowId and milestoneIndex required');
-    }
     await this.webhooks.keeperPing(dto);
   }
 }
