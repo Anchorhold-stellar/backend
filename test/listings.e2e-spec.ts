@@ -1,8 +1,9 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { Keypair } from '@stellar/stellar-sdk';
 import { AppModule } from '../src/app.module';
+import { applyGlobalMiddleware } from '../src/bootstrap';
 
 /**
  * Requires a live Postgres reachable at DATABASE_URL with schema.sql
@@ -24,9 +25,7 @@ describeIfDb('Listings (e2e)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
+    applyGlobalMiddleware(app);
     await app.init();
   });
 
@@ -63,7 +62,7 @@ describeIfDb('Listings (e2e)', () => {
       .expect(201);
 
     expect(createRes.body).toMatchObject({
-      host_wallet: kp.publicKey(),
+      hostWallet: kp.publicKey(),
       title: 'A rental',
       vertical: 'rental',
     });

@@ -1,19 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { applyGlobalMiddleware } from './bootstrap';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   app.enableCors();
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-  app.useGlobalFilters(new AllExceptionsFilter());
+  applyGlobalMiddleware(app);
 
   const port = process.env.PORT ?? 3002;
   await app.listen(port);
