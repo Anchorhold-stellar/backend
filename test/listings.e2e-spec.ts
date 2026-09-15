@@ -6,10 +6,10 @@ import { AppModule } from '../src/app.module';
 import { applyGlobalMiddleware } from '../src/bootstrap';
 
 /**
- * Requires a live Postgres reachable at DATABASE_URL with schema.sql
- * applied — `docker-compose up -d` starts one and seeds the schema
- * automatically. Skipped (not failed) if DATABASE_URL isn't set, so
- * `npm test` (unit tests) never depends on Docker being available.
+ * Requires a live Postgres reachable at DATABASE_URL with migrations
+ * applied — `docker compose up -d && npm run migrate:up`. Skipped (not
+ * failed) if DATABASE_URL isn't set, so `npm test` (unit tests) never
+ * depends on Docker being available.
  */
 const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
 

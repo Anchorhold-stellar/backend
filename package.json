@@ -9,6 +9,9 @@
     "start:indexer": "node dist/indexer/indexer.main.js",
     "start:indexer:dev": "ts-node -r tsconfig-paths/register src/indexer/indexer.main.ts",
     "lint": "eslint \"{src,test}/**/*.ts\"",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create --",
     "format": "prettier --write \"{src,test}/**/*.ts\"",
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json"
@@ -48,6 +51,7 @@
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.0",
     "@types/pg": "^8.11.6",
+    "node-pg-migrate": "^7.6.1",
     "@eslint/js": "^9.9.0",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.9.0",

@@ -20,17 +20,30 @@ cp .env.example .env    # then fill in DATABASE_URL, KEEPER_WEBHOOK_SECRET, etc.
 
 # Postgres for local dev (also used by e2e tests)
 docker compose up -d    # or: docker-compose up -d
+npm run migrate:up      # applies migrations/ against DATABASE_URL
 
 npm run start:dev       # HTTP API on :3002
 npm run start:indexer:dev   # indexer, as its own process — see "Indexer" below
+```
+
+## Database migrations
+
+Schema changes live in `migrations/` (via `node-pg-migrate`), not as a
+hand-applied SQL file — `migrations/1758000000000_initial-schema.js` is the
+full baseline schema, and every change after it is its own migration.
+
+```bash
+npm run migrate:up               # apply all pending migrations
+npm run migrate:down             # roll back the most recent migration
+npm run migrate:create -- <name> # scaffold a new migration
 ```
 
 ## Testing
 
 ```bash
 npm test        # unit tests — no external services required
-npm run test:e2e    # e2e tests — requires DATABASE_URL pointing at a live,
-                     # schema-applied Postgres (docker compose up -d is enough)
+npm run test:e2e    # e2e tests — requires DATABASE_URL pointing at a live
+                     # Postgres with migrations applied (see above)
 ```
 
 `test:e2e` skips itself (not a failure) when `DATABASE_URL` isn't set, so CI

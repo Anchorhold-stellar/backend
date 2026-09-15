@@ -40,8 +40,10 @@ jobs:
 
       - run: npm test
 
-      - name: Apply schema
-        run: PGPASSWORD=postgres psql -h localhost -U postgres -d safetrust_v2 -f src/database/schema.sql
+      - name: Run migrations
+        run: npm run migrate:up
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/safetrust_v2
 
       - name: e2e tests
         run: npm run test:e2e
