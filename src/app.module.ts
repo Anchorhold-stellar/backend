@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -26,7 +26,18 @@ import { validateEnv } from './config/env.validation';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      // ConfigService returns raw env strings, not numbers -- Number()
+      // them explicitly, since {ttl: "30000"} silently does the wrong
+      // thing rather than erroring.
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: Number(config.get<string>('THROTTLE_TTL_MS')) || 60_000,
+          limit: Number(config.get<string>('THROTTLE_LIMIT')) || 120,
+        },
+      ],
+    }),
     DatabaseModule,
     SorobanModule,
     EscrowModule,
