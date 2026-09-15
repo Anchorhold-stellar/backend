@@ -101,15 +101,35 @@ the original design. Two modes, via `INDEXER_MODE`:
   `ESCROW_CONTRACT_ID`. No contract is deployed yet in this project —
   `ESCROW_CONTRACT_ID` in `.env.example` is a placeholder.
 
+## Deployment
+
+`Dockerfile` is a multi-stage build (deps + `nest build` in a builder
+stage, `npm ci --omit=dev` + compiled `dist/` only in the final image,
+non-root user) for the HTTP API:
+
+```bash
+docker build -t safetrust-backend .
+docker run -p 3002:3002 \
+  -e DATABASE_URL=postgres://... \
+  -e ESCROW_CONTRACT_ID=... \
+  safetrust-backend
+```
+
+The indexer has its own image (`Dockerfile.indexer`) with the same build
+pattern, entrypoint `dist/indexer/indexer.main.js` instead.
+
+`docker-compose.yml` stays dev-only (just Postgres, for local `npm run
+start:dev` + e2e tests) — it doesn't run the app images above.
+
 ## Scope
 
 **In scope (this milestone):** the NestJS port itself, auth, validation,
 error handling, listings/jurors/reputation modules, the indexer
 port/adapter architecture, the dispute-resolution and auto-release cascades,
-unit + e2e tests.
+unit + e2e tests, containerized deployment for both the API and indexer.
 
 **Out of scope:** the actual Soroban smart contract (source/deployment),
-frontend integration, production deployment infrastructure (the only Docker
-artifact here is the dev-only Postgres in `docker-compose.yml`),
-production-grade auth (sessions, refresh tokens, a distributed nonce store),
-load testing, full historical event backfill.
+frontend integration, orchestration beyond plain Dockerfiles (no k8s
+manifests / Helm chart / ECS task defs), production-grade auth (sessions,
+refresh tokens, a distributed nonce store), load testing, full historical
+event backfill.
