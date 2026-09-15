@@ -7,6 +7,7 @@ import { EscrowModule } from './escrow/escrow.module';
 import { DisputesModule } from './disputes/disputes.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ListingsModule } from './listings/listings.module';
+import { AuthModule } from './auth/auth.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -18,6 +19,7 @@ import { validateEnv } from './config/env.validation';
     DisputesModule,
     WebhooksModule,
     ListingsModule,
+    AuthModule,
   ],
   controllers: [AppController],
 })
