@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CamelCaseInterceptor } from './common/interceptors/camel-case.interceptor';
+import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 
 /**
  * Global pipes/filters/interceptors applied to the HTTP app. Shared
@@ -16,5 +17,5 @@ export function applyGlobalMiddleware(app: INestApplication): void {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new CamelCaseInterceptor());
+  app.useGlobalInterceptors(new RequestLoggingInterceptor(), new CamelCaseInterceptor());
 }
