@@ -32,6 +32,11 @@ export class DisputesController {
     return this.disputes.findByEscrowId(escrowId);
   }
 
+  @Get(':escrowId/votes')
+  findVotes(@Param('escrowId') escrowId: string) {
+    return this.disputes.findVotes(escrowId);
+  }
+
   @Post(':escrowId/evidence')
   @HttpCode(201)
   @UseGuards(WalletAuthGuard)

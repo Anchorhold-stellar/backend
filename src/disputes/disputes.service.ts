@@ -39,6 +39,19 @@ export class DisputesService {
     return { ...dispute, evidence };
   }
 
+  async findVotes(escrowId: string) {
+    const dispute = await this.disputes.findByEscrowId(escrowId);
+    if (!dispute) {
+      throw new NotFoundException('no dispute for this escrow');
+    }
+    const votes = await this.disputes.findVotes(escrowId);
+    const forRenter = votes.filter((v) => v.vote_for_renter).length;
+    return {
+      votes,
+      tally: { forRenter, forHost: votes.length - forRenter },
+    };
+  }
+
   addEvidence(escrowId: string, dto: AddEvidenceDto) {
     return this.disputes.addEvidence(
       escrowId,
@@ -69,6 +82,11 @@ export class DisputesService {
     return this.soroban.buildContractCallXdr('resolve_dispute', dto.callerWallet, [
       dto.escrowId,
     ]);
+  }
+
+  /** Applies a `dispute_voted` on-chain event — see applyResolution below for why this isn't an HTTP route. */
+  recordVote(escrowId: number, jurorWallet: string, voteForRenter: boolean) {
+    return this.disputes.recordVote(escrowId, jurorWallet, voteForRenter);
   }
 
   /**

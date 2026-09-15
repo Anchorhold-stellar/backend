@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { DisputesService } from './disputes.service';
 
 describe('DisputesService.applyResolution', () => {
@@ -13,6 +14,9 @@ describe('DisputesService.applyResolution', () => {
       markResolved: jest.fn(async (id: string, outcome: string) => {
         calls.push(['markResolved', id, outcome]);
       }),
+      findByEscrowId: jest.fn(),
+      findVotes: jest.fn(),
+      recordVote: jest.fn(),
     };
     const escrowRepo = {
       findById: jest.fn(async () => escrow),
@@ -54,5 +58,53 @@ describe('DisputesService.applyResolution', () => {
     expect(escrowRepo.updateStatus).toHaveBeenCalledWith('1', 'completed');
     expect(reputation.adjustScore).toHaveBeenCalledWith('GHOST', 10);
     expect(reputation.adjustScore).toHaveBeenCalledWith('GRENTER', -5);
+  });
+});
+
+describe('DisputesService.findVotes', () => {
+  function makeService() {
+    const disputesRepo = {
+      findByEscrowId: jest.fn(),
+      findVotes: jest.fn(),
+    };
+    const service = new DisputesService(
+      disputesRepo as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    return { service, disputesRepo };
+  }
+
+  it('throws NotFoundException when there is no dispute for the escrow', async () => {
+    const { service, disputesRepo } = makeService();
+    disputesRepo.findByEscrowId.mockResolvedValue(null);
+
+    await expect(service.findVotes('999')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('tallies votes for renter vs host', async () => {
+    const { service, disputesRepo } = makeService();
+    disputesRepo.findByEscrowId.mockResolvedValue({ escrow_id: '1' });
+    disputesRepo.findVotes.mockResolvedValue([
+      { juror_wallet: 'G1', vote_for_renter: true },
+      { juror_wallet: 'G2', vote_for_renter: true },
+      { juror_wallet: 'G3', vote_for_renter: false },
+    ]);
+
+    const result = await service.findVotes('1');
+
+    expect(result.tally).toEqual({ forRenter: 2, forHost: 1 });
+    expect(result.votes).toHaveLength(3);
+  });
+
+  it('returns a zero tally when no jurors have voted yet', async () => {
+    const { service, disputesRepo } = makeService();
+    disputesRepo.findByEscrowId.mockResolvedValue({ escrow_id: '1' });
+    disputesRepo.findVotes.mockResolvedValue([]);
+
+    const result = await service.findVotes('1');
+
+    expect(result.tally).toEqual({ forRenter: 0, forHost: 0 });
   });
 });

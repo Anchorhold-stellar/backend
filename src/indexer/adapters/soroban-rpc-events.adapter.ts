@@ -87,6 +87,14 @@ export class SorobanRpcEventsAdapter implements SorobanEventsPort {
             openedBy: String(payload.openedBy),
             evidenceUri: String(payload.evidenceUri),
           };
+        case 'dispute_voted':
+          return {
+            type: 'dispute_voted',
+            ledger: raw.ledger,
+            escrowId: Number(payload.escrowId),
+            jurorWallet: String(payload.jurorWallet),
+            voteForRenter: Boolean(payload.voteForRenter),
+          };
         case 'dispute_resolved':
           return {
             type: 'dispute_resolved',

@@ -33,4 +33,11 @@ export type ChainEvent =
       ledger: number;
       escrowId: number;
       outcome: 'renter_wins' | 'host_wins';
+    }
+  | {
+      type: 'dispute_voted';
+      ledger: number;
+      escrowId: number;
+      jurorWallet: string;
+      voteForRenter: boolean;
     };

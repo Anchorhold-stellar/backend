@@ -42,6 +42,7 @@ describeIfDb('Disputes (e2e)', () => {
   });
 
   afterAll(async () => {
+    await pool.query(`DELETE FROM votes WHERE escrow_id = $1`, [escrowId]);
     await pool.query(`DELETE FROM dispute_evidence WHERE escrow_id = $1`, [escrowId]);
     await pool.query(`DELETE FROM disputes WHERE escrow_id = $1`, [escrowId]);
     await pool.query(`DELETE FROM escrows WHERE escrow_id = $1`, [escrowId]);
@@ -110,5 +111,31 @@ describeIfDb('Disputes (e2e)', () => {
       .expect(200);
     expect(res.body.evidence).toHaveLength(1);
     expect(res.body.evidence[0]).toMatchObject({ submittedBy: kp.publicKey(), uri: 'ipfs://proof' });
+  });
+
+  it('404s for votes on an escrow with no dispute', async () => {
+    await request(app.getHttpServer()).get('/disputes/999999999/votes').expect(404);
+  });
+
+  it('returns an empty tally before any juror has voted', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/disputes/${escrowId}/votes`)
+      .expect(200);
+
+    expect(res.body).toEqual({ votes: [], tally: { forRenter: 0, forHost: 0 } });
+  });
+
+  it('tallies votes seeded via the indexer path', async () => {
+    await pool.query(
+      `INSERT INTO votes (escrow_id, juror_wallet, vote_for_renter) VALUES ($1, 'GJUROR1', true), ($1, 'GJUROR2', true), ($1, 'GJUROR3', false)`,
+      [escrowId],
+    );
+
+    const res = await request(app.getHttpServer())
+      .get(`/disputes/${escrowId}/votes`)
+      .expect(200);
+
+    expect(res.body.tally).toEqual({ forRenter: 2, forHost: 1 });
+    expect(res.body.votes).toHaveLength(3);
   });
 });

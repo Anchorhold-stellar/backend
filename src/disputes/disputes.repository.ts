@@ -66,4 +66,25 @@ export class DisputesRepository {
     );
     return rows[0] ?? null;
   }
+
+  async findVotes(escrowId: string) {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM votes WHERE escrow_id = $1 ORDER BY voted_at ASC`,
+      [escrowId],
+    );
+    return rows;
+  }
+
+  async recordVote(escrowId: number, jurorWallet: string, voteForRenter: boolean) {
+    // A juror voting again for the same escrow replaces their earlier
+    // vote rather than erroring or duplicating — the UNIQUE(escrow_id,
+    // juror_wallet) constraint exists precisely to make that safe.
+    await this.pool.query(
+      `INSERT INTO votes (escrow_id, juror_wallet, vote_for_renter)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (escrow_id, juror_wallet) DO UPDATE
+         SET vote_for_renter = EXCLUDED.vote_for_renter, voted_at = now()`,
+      [escrowId, jurorWallet, voteForRenter],
+    );
+  }
 }

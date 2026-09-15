@@ -82,6 +82,12 @@ export class IndexerService {
           event.openedBy,
           event.evidenceUri,
         );
+      case 'dispute_voted':
+        return this.disputes.recordVote(
+          event.escrowId,
+          event.jurorWallet,
+          event.voteForRenter,
+        );
       case 'dispute_resolved':
         return this.disputes.applyResolution(String(event.escrowId), event.outcome);
       default:
