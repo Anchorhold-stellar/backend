@@ -3,7 +3,16 @@ import { Pool } from 'pg';
 import { PG_POOL } from '../database/pg-pool.provider';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { ListListingsQueryDto } from './dto/list-listings-query.dto';
+import { ListListingsQueryDto, ListingSortField } from './dto/list-listings-query.dto';
+
+// Never interpolate the sort field straight into SQL -- map through a
+// fixed whitelist so an unexpected value can't become a column-name
+// injection vector. class-validator's @IsIn already rejects anything not
+// in this set at the DTO layer; this is the second, independent guard.
+const SORT_COLUMNS: Record<ListingSortField, string> = {
+  createdAt: 'created_at',
+  title: 'title',
+};
 
 @Injectable()
 export class ListingsRepository {
@@ -28,10 +37,12 @@ export class ListingsRepository {
   async findAll(query: ListListingsQueryDto) {
     const { where, params } = this.buildFilter(query);
     const listParams = [...params, query.limit, query.offset];
+    const column = SORT_COLUMNS[query.sortBy ?? 'createdAt'];
+    const direction = query.sortOrder === 'asc' ? 'ASC' : 'DESC';
 
     const { rows } = await this.pool.query(
       `SELECT * FROM listings WHERE ${where}
-       ORDER BY created_at DESC
+       ORDER BY ${column} ${direction}
        LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
       listParams,
     );

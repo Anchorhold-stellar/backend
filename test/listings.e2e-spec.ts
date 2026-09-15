@@ -115,4 +115,37 @@ describeIfDb('Listings (e2e)', () => {
       .set(await authHeaders(app, kp))
       .expect(404);
   });
+
+  it('sorts by title in either direction, and rejects an unknown sort field', async () => {
+    const kp = Keypair.random();
+    for (const title of ['Zebra', 'Apple', 'Mango']) {
+      await request(app.getHttpServer())
+        .post('/v1/listings')
+        .set(await authHeaders(app, kp))
+        .send({ hostWallet: kp.publicKey(), title })
+        .expect(201);
+    }
+
+    const asc = await request(app.getHttpServer())
+      .get(`/v1/listings?hostWallet=${kp.publicKey()}&sortBy=title&sortOrder=asc`)
+      .expect(200);
+    expect(asc.body.map((l: { title: string }) => l.title)).toEqual([
+      'Apple',
+      'Mango',
+      'Zebra',
+    ]);
+
+    const desc = await request(app.getHttpServer())
+      .get(`/v1/listings?hostWallet=${kp.publicKey()}&sortBy=title&sortOrder=desc`)
+      .expect(200);
+    expect(desc.body.map((l: { title: string }) => l.title)).toEqual([
+      'Zebra',
+      'Mango',
+      'Apple',
+    ]);
+
+    await request(app.getHttpServer())
+      .get(`/v1/listings?sortBy=host_wallet`)
+      .expect(400);
+  });
 });
