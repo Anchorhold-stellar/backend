@@ -45,7 +45,7 @@ describeIfDb('Escrow cancellation (e2e)', () => {
 
   async function authHeaders(kp: Keypair) {
     const challengeRes = await request(app.getHttpServer())
-      .get(`/auth/challenge?wallet=${kp.publicKey()}`)
+      .get(`/v1/auth/challenge?wallet=${kp.publicKey()}`)
       .expect(200);
     const signature = kp
       .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
@@ -55,7 +55,7 @@ describeIfDb('Escrow cancellation (e2e)', () => {
 
   it('rejects cancellation without wallet auth', async () => {
     await request(app.getHttpServer())
-      .post('/escrows/build/cancel')
+      .post('/v1/escrows/build/cancel')
       .send({ renterWallet: 'GRENTER', escrowId: createdEscrowId })
       .expect(401);
   });
@@ -63,7 +63,7 @@ describeIfDb('Escrow cancellation (e2e)', () => {
   it('404s for an escrow that does not exist', async () => {
     const kp = Keypair.random();
     await request(app.getHttpServer())
-      .post('/escrows/build/cancel')
+      .post('/v1/escrows/build/cancel')
       .set(await authHeaders(kp))
       .send({ renterWallet: kp.publicKey(), escrowId: 999999999 })
       .expect(404);
@@ -72,7 +72,7 @@ describeIfDb('Escrow cancellation (e2e)', () => {
   it('rejects cancelling an escrow that is no longer in created status', async () => {
     const kp = Keypair.random();
     const res = await request(app.getHttpServer())
-      .post('/escrows/build/cancel')
+      .post('/v1/escrows/build/cancel')
       .set(await authHeaders(kp))
       .send({ renterWallet: kp.publicKey(), escrowId: activeEscrowId })
       .expect(400);

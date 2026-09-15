@@ -17,7 +17,7 @@ const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
 
 async function authHeaders(app: INestApplication, kp: Keypair) {
   const challengeRes = await request(app.getHttpServer())
-    .get(`/auth/challenge?wallet=${kp.publicKey()}`)
+    .get(`/v1/auth/challenge?wallet=${kp.publicKey()}`)
     .expect(200);
   const signature = kp
     .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
@@ -53,7 +53,7 @@ describeIfDb('Listings (e2e)', () => {
 
   it('rejects listing creation without wallet auth headers', async () => {
     await request(app.getHttpServer())
-      .post('/listings')
+      .post('/v1/listings')
       .send({ hostWallet: 'GTEST', title: 'A rental' })
       .expect(401);
   });
@@ -63,7 +63,7 @@ describeIfDb('Listings (e2e)', () => {
     const headers = await authHeaders(app, kp);
 
     const createRes = await request(app.getHttpServer())
-      .post('/listings')
+      .post('/v1/listings')
       .set(headers)
       .send({ hostWallet: kp.publicKey(), title: 'A rental', vertical: 'rental' })
       .expect(201);
@@ -75,41 +75,42 @@ describeIfDb('Listings (e2e)', () => {
     });
 
     const listRes = await request(app.getHttpServer())
-      .get(`/listings?hostWallet=${kp.publicKey()}`)
+      .get(`/v1/listings?hostWallet=${kp.publicKey()}`)
       .expect(200);
     expect(listRes.body).toHaveLength(1);
 
-    await request(app.getHttpServer()).get(`/listings/${createRes.body.id}`).expect(200);
+    await request(app.getHttpServer())
+      .get(`/v1/listings/${createRes.body.id}`)
+      .expect(200);
   });
 
   it('soft-deletes: hidden from reads, but the row and its history survive', async () => {
     const kp = Keypair.random();
 
     const createRes = await request(app.getHttpServer())
-      .post('/listings')
+      .post('/v1/listings')
       .set(await authHeaders(app, kp))
       .send({ hostWallet: kp.publicKey(), title: 'to be deleted' })
       .expect(201);
     const id: string = createRes.body.id;
 
     await request(app.getHttpServer())
-      .delete(`/listings/${id}`)
+      .delete(`/v1/listings/${id}`)
       .set(await authHeaders(app, kp))
       .expect(204);
 
-    await request(app.getHttpServer()).get(`/listings/${id}`).expect(404);
+    await request(app.getHttpServer()).get(`/v1/listings/${id}`).expect(404);
 
-    const { rows } = await pool.query(
-      `SELECT deleted_at FROM listings WHERE id = $1`,
-      [id],
-    );
+    const { rows } = await pool.query(`SELECT deleted_at FROM listings WHERE id = $1`, [
+      id,
+    ]);
     expect(rows).toHaveLength(1);
     expect(rows[0].deleted_at).not.toBeNull();
 
     // Deleting again should 404 (the guard is deleted_at IS NULL), not
     // silently succeed a second time.
     await request(app.getHttpServer())
-      .delete(`/listings/${id}`)
+      .delete(`/v1/listings/${id}`)
       .set(await authHeaders(app, kp))
       .expect(404);
   });

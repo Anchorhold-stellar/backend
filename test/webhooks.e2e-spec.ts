@@ -33,14 +33,14 @@ describeIfDb('Webhooks (e2e)', () => {
 
   it('rejects a keeper-ping with no signature header', async () => {
     await request(app.getHttpServer())
-      .post('/webhooks/keeper-ping')
+      .post('/v1/webhooks/keeper-ping')
       .send({ escrowId: 1, milestoneIndex: 0 })
       .expect(401);
   });
 
   it('rejects a keeper-ping with an invalid signature', async () => {
     await request(app.getHttpServer())
-      .post('/webhooks/keeper-ping')
+      .post('/v1/webhooks/keeper-ping')
       .set('X-Keeper-Signature', 'sha256=' + '0'.repeat(64))
       .send({ escrowId: 1, milestoneIndex: 0 })
       .expect(401);
@@ -49,7 +49,7 @@ describeIfDb('Webhooks (e2e)', () => {
   it('accepts a keeper-ping with a valid signature', async () => {
     const body = { escrowId: 1, milestoneIndex: 0 };
     await request(app.getHttpServer())
-      .post('/webhooks/keeper-ping')
+      .post('/v1/webhooks/keeper-ping')
       .set('X-Keeper-Signature', sign(body))
       .send(body)
       .expect(204);

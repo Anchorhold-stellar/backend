@@ -29,6 +29,10 @@ npm run start:indexer:dev   # indexer, as its own process — see "Indexer" belo
 API docs (Swagger UI) are served at `GET /docs` once the app is running, with
 the raw OpenAPI spec at `GET /docs-json`.
 
+Every route is versioned via a `/v1` URI prefix (e.g. `GET /v1/listings`),
+except `GET /health` and `GET /health/ready`, which stay unversioned since
+infra liveness/readiness probes shouldn't need updating on a version bump.
+
 ## Database migrations
 
 Schema changes live in `migrations/` (via `node-pg-migrate`), not as a

@@ -29,7 +29,7 @@ describeIfDb('Reputation (e2e)', () => {
 
   it('returns a default zero-score record for a wallet with no history', async () => {
     const res = await request(app.getHttpServer())
-      .get('/reputation/GNEVER-SCORED')
+      .get('/v1/reputation/GNEVER-SCORED')
       .expect(200);
 
     expect(res.body).toEqual({ wallet: 'GNEVER-SCORED', score: 0, updatedAt: null });
@@ -40,7 +40,7 @@ describeIfDb('Reputation (e2e)', () => {
     // nothing else is reachable (adjustScore is internal-only, wired from
     // the dispute resolution cascade, not exposed over HTTP).
     await request(app.getHttpServer())
-      .post('/reputation/GWALLET')
+      .post('/v1/reputation/GWALLET')
       .send({ score: 999 })
       .expect(404);
   });
@@ -66,7 +66,7 @@ describeIfDb('Reputation (e2e)', () => {
 
     it('orders by score descending', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/reputation?limit=100`)
+        .get(`/v1/reputation?limit=100`)
         .expect(200);
 
       const wallets = res.body
@@ -81,7 +81,7 @@ describeIfDb('Reputation (e2e)', () => {
       // single global top record — other reputation rows may exist from
       // other test runs against this same (unreset) database.
       const res = await request(app.getHttpServer())
-        .get(`/reputation?limit=1`)
+        .get(`/v1/reputation?limit=1`)
         .expect(200);
 
       expect(res.body).toHaveLength(1);

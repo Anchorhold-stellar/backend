@@ -50,12 +50,12 @@ describeIfDb('Disputes (e2e)', () => {
   });
 
   it('404s for an escrow with no dispute', async () => {
-    await request(app.getHttpServer()).get('/disputes/999999999').expect(404);
+    await request(app.getHttpServer()).get('/v1/disputes/999999999').expect(404);
   });
 
   it('fetches a dispute with its evidence', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/disputes/${escrowId}`)
+      .get(`/v1/disputes/${escrowId}`)
       .expect(200);
 
     expect(res.body).toMatchObject({
@@ -68,7 +68,7 @@ describeIfDb('Disputes (e2e)', () => {
 
   it('rejects evidence submission without wallet auth', async () => {
     await request(app.getHttpServer())
-      .post(`/disputes/${escrowId}/evidence`)
+      .post(`/v1/disputes/${escrowId}/evidence`)
       .send({ submittedBy: 'GRENTER', uri: 'ipfs://proof' })
       .expect(401);
   });
@@ -76,14 +76,14 @@ describeIfDb('Disputes (e2e)', () => {
   it('rejects evidence submitted as a different wallet than the authenticated one', async () => {
     const kp = Keypair.random();
     const challengeRes = await request(app.getHttpServer())
-      .get(`/auth/challenge?wallet=${kp.publicKey()}`)
+      .get(`/v1/auth/challenge?wallet=${kp.publicKey()}`)
       .expect(200);
     const signature = kp
       .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
       .toString('base64');
 
     await request(app.getHttpServer())
-      .post(`/disputes/${escrowId}/evidence`)
+      .post(`/v1/disputes/${escrowId}/evidence`)
       .set('X-Wallet-Address', kp.publicKey())
       .set('X-Wallet-Signature', signature)
       .send({ submittedBy: 'GSOMEONE-ELSE', uri: 'ipfs://proof' })
@@ -93,33 +93,36 @@ describeIfDb('Disputes (e2e)', () => {
   it('accepts evidence from the authenticated wallet and it appears on the dispute', async () => {
     const kp = Keypair.random();
     const challengeRes = await request(app.getHttpServer())
-      .get(`/auth/challenge?wallet=${kp.publicKey()}`)
+      .get(`/v1/auth/challenge?wallet=${kp.publicKey()}`)
       .expect(200);
     const signature = kp
       .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
       .toString('base64');
 
     await request(app.getHttpServer())
-      .post(`/disputes/${escrowId}/evidence`)
+      .post(`/v1/disputes/${escrowId}/evidence`)
       .set('X-Wallet-Address', kp.publicKey())
       .set('X-Wallet-Signature', signature)
       .send({ submittedBy: kp.publicKey(), uri: 'ipfs://proof', note: 'photo' })
       .expect(201);
 
     const res = await request(app.getHttpServer())
-      .get(`/disputes/${escrowId}`)
+      .get(`/v1/disputes/${escrowId}`)
       .expect(200);
     expect(res.body.evidence).toHaveLength(1);
-    expect(res.body.evidence[0]).toMatchObject({ submittedBy: kp.publicKey(), uri: 'ipfs://proof' });
+    expect(res.body.evidence[0]).toMatchObject({
+      submittedBy: kp.publicKey(),
+      uri: 'ipfs://proof',
+    });
   });
 
   it('404s for votes on an escrow with no dispute', async () => {
-    await request(app.getHttpServer()).get('/disputes/999999999/votes').expect(404);
+    await request(app.getHttpServer()).get('/v1/disputes/999999999/votes').expect(404);
   });
 
   it('returns an empty tally before any juror has voted', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/disputes/${escrowId}/votes`)
+      .get(`/v1/disputes/${escrowId}/votes`)
       .expect(200);
 
     expect(res.body).toEqual({ votes: [], tally: { forRenter: 0, forHost: 0 } });
@@ -132,7 +135,7 @@ describeIfDb('Disputes (e2e)', () => {
     );
 
     const res = await request(app.getHttpServer())
-      .get(`/disputes/${escrowId}/votes`)
+      .get(`/v1/disputes/${escrowId}/votes`)
       .expect(200);
 
     expect(res.body.tally).toEqual({ forRenter: 2, forHost: 1 });
