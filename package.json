@@ -2,6 +2,9 @@
   "name": "@safetrust-v2/backend",
   "version": "0.2.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
