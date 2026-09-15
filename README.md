@@ -1,4 +1,4 @@
-# SafeTrust v2 — Backend
+# AnchorHold — Backend
 
 A NestJS backend for a Stellar/Soroban-based escrow and dispute-resolution
 marketplace (rental / equipment / service listings, milestone-based escrow,
