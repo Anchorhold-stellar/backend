@@ -1,8 +1,9 @@
+import { ConfigService } from '@nestjs/config';
 import { IndexerService } from './indexer.service';
 import { MockEventsAdapter } from './adapters/mock-events.adapter';
 
 describe('IndexerService', () => {
-  function makeService() {
+  function makeService(configValues: Record<string, string> = {}) {
     const indexerRepo = {
       getLastLedger: jest.fn(async () => 0),
       setLastLedger: jest.fn(async () => undefined),
@@ -17,13 +18,16 @@ describe('IndexerService', () => {
       recordVote: jest.fn(async () => undefined),
     };
     const notifications = { notify: jest.fn(async () => undefined) };
+    const scheduler = { addInterval: jest.fn() };
     const service = new IndexerService(
       new MockEventsAdapter(),
       indexerRepo as never,
       disputes as never,
       notifications as never,
+      new ConfigService(configValues),
+      scheduler as never,
     );
-    return { service, indexerRepo, disputes, notifications };
+    return { service, indexerRepo, disputes, notifications, scheduler };
   }
 
   it('applies every fixture event in order and advances the cursor', async () => {
@@ -56,5 +60,33 @@ describe('IndexerService', () => {
     expect(count).toBe(0);
     expect(indexerRepo.createEscrow).not.toHaveBeenCalled();
     expect(indexerRepo.setLastLedger).not.toHaveBeenCalled();
+  });
+
+  describe('onModuleInit', () => {
+    afterEach(() => jest.useRealTimers());
+
+    it('registers the interval using INDEXER_POLL_INTERVAL_MS when configured', () => {
+      jest.useFakeTimers();
+      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+      const { service, scheduler } = makeService({ INDEXER_POLL_INTERVAL_MS: '2000' });
+
+      service.onModuleInit();
+
+      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 2000);
+      expect(scheduler.addInterval).toHaveBeenCalledWith(
+        'indexer-poll',
+        expect.anything(),
+      );
+    });
+
+    it('falls back to the 5000ms default when unconfigured', () => {
+      jest.useFakeTimers();
+      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+      const { service } = makeService();
+
+      service.onModuleInit();
+
+      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
+    });
   });
 });

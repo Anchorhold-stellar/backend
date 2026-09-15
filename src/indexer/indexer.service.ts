@@ -1,5 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Interval } from '@nestjs/schedule';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { SchedulerRegistry } from '@nestjs/schedule';
 import { DisputesService } from '../disputes/disputes.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChainEvent } from './chain-event';
@@ -7,15 +8,22 @@ import { IndexerRepository } from './indexer.repository';
 import { SOROBAN_EVENTS_PORT, SorobanEventsPort } from './ports/soroban-events.port';
 
 const DEFAULT_POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_NAME = 'indexer-poll';
 
 /**
  * Polling indexer — not a subscription, the simplest thing that works at
  * testnet scale (see the port/adapter split in ports/adapters — that's
  * what makes this swappable for a proper event-streaming setup later
  * without touching the event-application logic below).
+ *
+ * The interval is registered dynamically in onModuleInit rather than via
+ * a plain @Interval() decorator, since a decorator's argument is fixed at
+ * class-definition time and can't read INDEXER_POLL_INTERVAL_MS from
+ * ConfigService -- the original Express prototype read this env var;
+ * hardcoding it here would have been a silent regression from the port.
  */
 @Injectable()
-export class IndexerService {
+export class IndexerService implements OnModuleInit {
   private readonly logger = new Logger(IndexerService.name);
   private polling = false;
 
@@ -24,9 +32,19 @@ export class IndexerService {
     private readonly indexer: IndexerRepository,
     private readonly disputes: DisputesService,
     private readonly notifications: NotificationsService,
+    private readonly config: ConfigService,
+    private readonly scheduler: SchedulerRegistry,
   ) {}
 
-  @Interval(DEFAULT_POLL_INTERVAL_MS)
+  onModuleInit() {
+    const intervalMs =
+      Number(this.config.get<string>('INDEXER_POLL_INTERVAL_MS')) ||
+      DEFAULT_POLL_INTERVAL_MS;
+    const handle = setInterval(() => void this.poll(), intervalMs);
+    this.scheduler.addInterval(POLL_INTERVAL_NAME, handle);
+    this.logger.log(`polling every ${intervalMs}ms`);
+  }
+
   async poll() {
     // Guards against overlapping runs if one iteration takes longer than
     // the interval — a single-flight poll, not a queue.
