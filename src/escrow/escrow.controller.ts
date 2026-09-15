@@ -1,27 +1,17 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { EscrowService } from './escrow.service';
 import { BuildCreateEscrowDto } from './dto/build-create-escrow.dto';
 import { BuildDepositDto } from './dto/build-deposit.dto';
 import { BuildConfirmMilestoneDto } from './dto/build-confirm-milestone.dto';
+import { ListEscrowsQueryDto } from './dto/list-escrows-query.dto';
 
 @Controller('escrows')
 export class EscrowController {
   constructor(private readonly escrows: EscrowService) {}
 
   @Get()
-  findByWallet(@Query('wallet') wallet?: string) {
-    if (!wallet) {
-      throw new BadRequestException('wallet query param required');
-    }
-    return this.escrows.findByWallet(wallet);
+  findByWallet(@Query() query: ListEscrowsQueryDto) {
+    return this.escrows.findByWallet(query);
   }
 
   @Get(':escrowId')

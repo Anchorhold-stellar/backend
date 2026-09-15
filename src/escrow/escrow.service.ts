@@ -4,6 +4,7 @@ import { EscrowRepository } from './escrow.repository';
 import { BuildCreateEscrowDto } from './dto/build-create-escrow.dto';
 import { BuildDepositDto } from './dto/build-deposit.dto';
 import { BuildConfirmMilestoneDto } from './dto/build-confirm-milestone.dto';
+import { ListEscrowsQueryDto } from './dto/list-escrows-query.dto';
 
 @Injectable()
 export class EscrowService {
@@ -12,8 +13,8 @@ export class EscrowService {
     private readonly soroban: SorobanService,
   ) {}
 
-  findByWallet(wallet: string) {
-    return this.escrows.findByWallet(wallet);
+  findByWallet(query: ListEscrowsQueryDto) {
+    return this.escrows.findByWallet(query);
   }
 
   async findById(escrowId: string) {

@@ -7,18 +7,20 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
+import { ListListingsQueryDto } from './dto/list-listings-query.dto';
 
 @Controller('listings')
 export class ListingsController {
   constructor(private readonly listings: ListingsService) {}
 
   @Get()
-  findAll() {
-    return this.listings.findAll();
+  findAll(@Query() query: ListListingsQueryDto) {
+    return this.listings.findAll(query);
   }
 
   @Get(':id')

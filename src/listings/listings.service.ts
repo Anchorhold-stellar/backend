@@ -2,13 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ListingsRepository } from './listings.repository';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
+import { ListListingsQueryDto } from './dto/list-listings-query.dto';
 
 @Injectable()
 export class ListingsService {
   constructor(private readonly listings: ListingsRepository) {}
 
-  findAll() {
-    return this.listings.findAll();
+  findAll(query: ListListingsQueryDto) {
+    return this.listings.findAll(query);
   }
 
   async findById(id: string) {

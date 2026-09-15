@@ -3,14 +3,33 @@ import { Pool } from 'pg';
 import { PG_POOL } from '../database/pg-pool.provider';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
+import { ListListingsQueryDto } from './dto/list-listings-query.dto';
 
 @Injectable()
 export class ListingsRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
-  async findAll() {
+  async findAll(query: ListListingsQueryDto) {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (query.vertical) {
+      params.push(query.vertical);
+      conditions.push(`vertical = $${params.length}`);
+    }
+    if (query.hostWallet) {
+      params.push(query.hostWallet);
+      conditions.push(`host_wallet = $${params.length}`);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(query.limit, query.offset);
+
     const { rows } = await this.pool.query(
-      `SELECT * FROM listings ORDER BY created_at DESC`,
+      `SELECT * FROM listings ${where}
+       ORDER BY created_at DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params,
     );
     return rows;
   }
