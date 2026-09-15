@@ -53,4 +53,32 @@ describe('NotificationsService', () => {
 
     await expect(service.notify('dispute_resolved', {})).resolves.toBeUndefined();
   });
+
+  it('aborts a non-responding webhook instead of hanging indefinitely', async () => {
+    // Regression test: the indexer awaits notify() inline while applying
+    // each chain event, so a webhook that never resolves and never
+    // rejects -- an unresponsive host, a connection dropped with no
+    // RST -- would stall event processing forever without a timeout.
+    // This fetch mock never settles on its own; it only rejects when the
+    // AbortSignal passed by NotificationsService actually fires, so the
+    // test itself hangs until jest's own timeout if the fix regresses.
+    const fetchMock = jest.fn(
+      (_url: string, opts: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          opts.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    );
+    global.fetch = fetchMock as never;
+    const service = new NotificationsService(
+      new ConfigService({
+        NOTIFICATIONS_WEBHOOK_URL: 'https://example.com/hook',
+        NOTIFICATIONS_WEBHOOK_TIMEOUT_MS: '50',
+      }),
+    );
+
+    const start = Date.now();
+    await service.notify('dispute_resolved', {});
+
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });
