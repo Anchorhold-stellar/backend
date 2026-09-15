@@ -50,4 +50,28 @@ export class EscrowRepository {
     );
     return rows[0] ?? null;
   }
+
+  async findDueMilestones() {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM milestones
+       WHERE auto_release_at IS NOT NULL AND auto_release_at <= now() AND released = false`,
+    );
+    return rows;
+  }
+
+  async releaseMilestone(id: string) {
+    await this.pool.query(
+      `UPDATE milestones SET released = true, released_at = now() WHERE id = $1`,
+      [id],
+    );
+  }
+
+  async allMilestonesReleased(escrowId: string) {
+    const { rows } = await this.pool.query(
+      `SELECT count(*) FILTER (WHERE NOT released) AS unreleased
+       FROM milestones WHERE escrow_id = $1`,
+      [escrowId],
+    );
+    return Number(rows[0].unreleased) === 0;
+  }
 }
