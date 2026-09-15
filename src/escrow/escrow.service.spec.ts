@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EscrowService } from './escrow.service';
 
 describe('EscrowService', () => {
@@ -66,5 +66,40 @@ describe('EscrowService', () => {
       'GRENTER',
       ['GRENTER', 5, 2],
     );
+  });
+
+  describe('buildCancel', () => {
+    it('throws NotFoundException for an unknown escrow', async () => {
+      const { service, escrows } = makeService();
+      escrows.findById.mockResolvedValue(null);
+
+      await expect(
+        service.buildCancel({ renterWallet: 'GRENTER', escrowId: 1 } as never),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it.each(['active', 'disputed', 'completed', 'cancelled'])(
+      'rejects cancelling an escrow already in status %s',
+      async (status) => {
+        const { service, escrows } = makeService();
+        escrows.findById.mockResolvedValue({ escrow_id: '1', status });
+
+        await expect(
+          service.buildCancel({ renterWallet: 'GRENTER', escrowId: 1 } as never),
+        ).rejects.toBeInstanceOf(BadRequestException);
+      },
+    );
+
+    it('builds cancel_escrow XDR for an escrow still in created status', async () => {
+      const { service, escrows, soroban } = makeService();
+      escrows.findById.mockResolvedValue({ escrow_id: '1', status: 'created' });
+
+      await service.buildCancel({ renterWallet: 'GRENTER', escrowId: 1 } as never);
+
+      expect(soroban.buildContractCallXdr).toHaveBeenCalledWith('cancel_escrow', 'GRENTER', [
+        'GRENTER',
+        1,
+      ]);
+    });
   });
 });

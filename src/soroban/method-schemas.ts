@@ -46,6 +46,10 @@ export const CONTRACT_METHODS: Record<string, ContractMethodSchema> = {
     args: ['u32'],
     permissionless: true,
   },
+  cancel_escrow: {
+    method: 'cancel_escrow',
+    args: ['address', 'u32'],
+  },
 };
 
 export type ContractMethodName = keyof typeof CONTRACT_METHODS;

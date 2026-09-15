@@ -3,6 +3,7 @@ import { EscrowService } from './escrow.service';
 import { BuildCreateEscrowDto } from './dto/build-create-escrow.dto';
 import { BuildDepositDto } from './dto/build-deposit.dto';
 import { BuildConfirmMilestoneDto } from './dto/build-confirm-milestone.dto';
+import { BuildCancelEscrowDto } from './dto/build-cancel-escrow.dto';
 import { ListEscrowsQueryDto } from './dto/list-escrows-query.dto';
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
@@ -44,5 +45,12 @@ export class EscrowController {
   ) {
     assertWalletMatches(dto.renterWallet, wallet);
     return this.escrows.buildConfirmMilestone(dto).then((xdr) => ({ xdr }));
+  }
+
+  @Post('build/cancel')
+  @UseGuards(WalletAuthGuard)
+  buildCancel(@Body() dto: BuildCancelEscrowDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.renterWallet, wallet);
+    return this.escrows.buildCancel(dto).then((xdr) => ({ xdr }));
   }
 }
