@@ -49,6 +49,16 @@ describeIfDb('Disputes (e2e)', () => {
     await app.close();
   });
 
+  async function authHeaders(kp: Keypair) {
+    const challengeRes = await request(app.getHttpServer())
+      .get(`/v1/auth/challenge?wallet=${kp.publicKey()}`)
+      .expect(200);
+    const signature = kp
+      .sign(Buffer.from(challengeRes.body.nonce, 'utf8'))
+      .toString('base64');
+    return { 'X-Wallet-Address': kp.publicKey(), 'X-Wallet-Signature': signature };
+  }
+
   it('404s for an escrow with no dispute', async () => {
     await request(app.getHttpServer()).get('/v1/disputes/999999999').expect(404);
   });
@@ -144,5 +154,32 @@ describeIfDb('Disputes (e2e)', () => {
 
     expect(res.body.tally).toEqual({ forRenter: 2, forHost: 1 });
     expect(res.body.votes).toHaveLength(3);
+  });
+
+  describe('build/raise, build/vote, build/resolve', () => {
+    const cases = [
+      { path: 'build/raise', field: 'callerWallet', body: { escrowId: 1, milestoneIndex: 0, evidenceUri: 'ipfs://x' } },
+      { path: 'build/vote', field: 'jurorWallet', body: { escrowId: 1, voteForRenter: true } },
+      { path: 'build/resolve', field: 'callerWallet', body: { escrowId: 1 } },
+    ];
+
+    it.each(cases)('rejects $path without wallet auth', async ({ path, field, body }) => {
+      await request(app.getHttpServer())
+        .post(`/v1/disputes/${path}`)
+        .send({ [field]: 'GWALLET', ...body })
+        .expect(401);
+    });
+
+    it.each(cases)(
+      'rejects $path when $field does not match the authenticated wallet',
+      async ({ path, field, body }) => {
+        const kp = Keypair.random();
+        await request(app.getHttpServer())
+          .post(`/v1/disputes/${path}`)
+          .set(await authHeaders(kp))
+          .send({ [field]: 'GSOMEONE-ELSE', ...body })
+          .expect(403);
+      },
+    );
   });
 });
