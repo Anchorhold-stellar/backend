@@ -26,6 +26,9 @@ npm run start:dev       # HTTP API on :3002
 npm run start:indexer:dev   # indexer, as its own process — see "Indexer" below
 ```
 
+API docs (Swagger UI) are served at `GET /docs` once the app is running, with
+the raw OpenAPI spec at `GET /docs-json`.
+
 ## Database migrations
 
 Schema changes live in `migrations/` (via `node-pg-migrate`), not as a
@@ -55,15 +58,17 @@ or local runs of `npm test` never depend on Docker being available.
 |---|---|
 | `database` | `pg.Pool` provider (`PG_POOL`), env validation |
 | `soroban` | Builds unsigned contract-call XDR via explicit per-method arg schemas |
-| `escrow` | Escrow reads, XDR builders, auto-release cron |
-| `disputes` | Dispute reads/evidence, XDR builders, resolution cascade |
-| `listings` | Listings CRUD |
+| `escrow` | Escrow reads, XDR builders (create/deposit/confirm/cancel), auto-release cron |
+| `disputes` | Dispute reads/evidence/votes, XDR builders, resolution cascade |
+| `listings` | Listings CRUD (soft-delete) |
 | `jurors` | Juror registration/staking |
-| `reputation` | Reputation read + internal adjustment API |
+| `reputation` | Reputation read + leaderboard + internal adjustment API |
 | `auth` | Wallet-signature challenge/verify, `WalletAuthGuard` |
 | `webhooks` | Out-of-band keeper-ping, HMAC-verified |
+| `notifications` | Configurable outbound webhook fan-out on key domain events |
+| `health` | Liveness (`/health`) and DB readiness (`/health/ready`) checks |
 | `indexer` | Polls Soroban contract events and applies them to the read model |
-| `common` | Global exception filter, pagination DTO, wallet-identity assertion |
+| `common` | Global exception filter, camelCase response interceptor, request logging, pagination DTO, wallet-identity assertion |
 
 ## Auth
 
