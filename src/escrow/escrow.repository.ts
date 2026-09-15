@@ -28,10 +28,9 @@ export class EscrowRepository {
   }
 
   async findById(escrowId: string) {
-    const { rows } = await this.pool.query(
-      `SELECT * FROM escrows WHERE escrow_id = $1`,
-      [escrowId],
-    );
+    const { rows } = await this.pool.query(`SELECT * FROM escrows WHERE escrow_id = $1`, [
+      escrowId,
+    ]);
     return rows[0] ?? null;
   }
 

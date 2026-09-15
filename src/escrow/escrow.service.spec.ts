@@ -45,12 +45,11 @@ describe('EscrowService', () => {
 
     await service.buildCreate(dto as never);
 
-    expect(soroban.buildContractCallXdr).toHaveBeenCalledWith('create_escrow', 'GRENTER', [
+    expect(soroban.buildContractCallXdr).toHaveBeenCalledWith(
+      'create_escrow',
       'GRENTER',
-      'GHOST',
-      'GASSET',
-      dto.milestones,
-    ]);
+      ['GRENTER', 'GHOST', 'GASSET', dto.milestones],
+    );
   });
 
   it('builds confirm_milestone XDR with the correct argument order', async () => {

@@ -72,8 +72,6 @@ describeIfDb('Listings (e2e)', () => {
       .expect(200);
     expect(listRes.body).toHaveLength(1);
 
-    await request(app.getHttpServer())
-      .get(`/listings/${createRes.body.id}`)
-      .expect(200);
+    await request(app.getHttpServer()).get(`/listings/${createRes.body.id}`).expect(200);
   });
 });

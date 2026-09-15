@@ -15,6 +15,8 @@ describe('DatabaseHealthIndicator', () => {
     const pool = { query: jest.fn().mockRejectedValue(new Error('connection refused')) };
     const indicator = new DatabaseHealthIndicator(pool as never);
 
-    await expect(indicator.isHealthy('database')).rejects.toBeInstanceOf(HealthCheckError);
+    await expect(indicator.isHealthy('database')).rejects.toBeInstanceOf(
+      HealthCheckError,
+    );
   });
 });

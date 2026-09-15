@@ -1,10 +1,14 @@
-import { CorrelationIdMiddleware, RequestWithCorrelationId } from './correlation-id.middleware';
+import {
+  CorrelationIdMiddleware,
+  RequestWithCorrelationId,
+} from './correlation-id.middleware';
 
 describe('CorrelationIdMiddleware', () => {
   function makeReqRes(incomingHeader?: string) {
     const headers: Record<string, string> = {};
     const req = {
-      header: (name: string) => (name.toLowerCase() === 'x-request-id' ? incomingHeader : undefined),
+      header: (name: string) =>
+        name.toLowerCase() === 'x-request-id' ? incomingHeader : undefined,
     } as RequestWithCorrelationId;
     const res = {
       setHeader: (name: string, value: string) => {

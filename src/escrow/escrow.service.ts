@@ -43,10 +43,10 @@ export class EscrowService {
   }
 
   buildConfirmMilestone(dto: BuildConfirmMilestoneDto) {
-    return this.soroban.buildContractCallXdr(
-      'confirm_milestone',
+    return this.soroban.buildContractCallXdr('confirm_milestone', dto.renterWallet, [
       dto.renterWallet,
-      [dto.renterWallet, dto.escrowId, dto.milestoneIndex],
-    );
+      dto.escrowId,
+      dto.milestoneIndex,
+    ]);
   }
 }

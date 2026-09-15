@@ -19,10 +19,9 @@ export class JurorsRepository {
   }
 
   async findByWallet(wallet: string) {
-    const { rows } = await this.pool.query(
-      `SELECT * FROM jurors WHERE wallet = $1`,
-      [wallet],
-    );
+    const { rows } = await this.pool.query(`SELECT * FROM jurors WHERE wallet = $1`, [
+      wallet,
+    ]);
     return rows[0] ?? null;
   }
 

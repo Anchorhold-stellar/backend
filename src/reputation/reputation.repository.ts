@@ -7,10 +7,9 @@ export class ReputationRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   async findByWallet(wallet: string) {
-    const { rows } = await this.pool.query(
-      `SELECT * FROM reputation WHERE wallet = $1`,
-      [wallet],
-    );
+    const { rows } = await this.pool.query(`SELECT * FROM reputation WHERE wallet = $1`, [
+      wallet,
+    ]);
     return rows[0] ?? null;
   }
 

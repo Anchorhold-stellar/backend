@@ -37,15 +37,11 @@ export class SorobanService {
 
   constructor(private readonly config: ConfigService) {
     this.server = new rpc.Server(
-      this.config.get<string>('SOROBAN_RPC_URL') ??
-        'https://soroban-testnet.stellar.org',
+      this.config.get<string>('SOROBAN_RPC_URL') ?? 'https://soroban-testnet.stellar.org',
     );
-    this.contract = new Contract(
-      this.config.get<string>('ESCROW_CONTRACT_ID') ?? '',
-    );
+    this.contract = new Contract(this.config.get<string>('ESCROW_CONTRACT_ID') ?? '');
     this.networkPassphrase =
-      this.config.get<string>('SOROBAN_NETWORK_PASSPHRASE') ??
-      Networks.TESTNET;
+      this.config.get<string>('SOROBAN_NETWORK_PASSPHRASE') ?? Networks.TESTNET;
   }
 
   /**

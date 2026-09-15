@@ -44,11 +44,12 @@ export class DisputesService {
   }
 
   buildRaise(dto: BuildRaiseDisputeDto) {
-    return this.soroban.buildContractCallXdr(
-      'raise_dispute',
+    return this.soroban.buildContractCallXdr('raise_dispute', dto.callerWallet, [
       dto.callerWallet,
-      [dto.callerWallet, dto.escrowId, dto.milestoneIndex, dto.evidenceUri],
-    );
+      dto.escrowId,
+      dto.milestoneIndex,
+      dto.evidenceUri,
+    ]);
   }
 
   buildVote(dto: BuildVoteDisputeDto) {
@@ -60,11 +61,9 @@ export class DisputesService {
   }
 
   buildResolve(dto: BuildResolveDisputeDto) {
-    return this.soroban.buildContractCallXdr(
-      'resolve_dispute',
-      dto.callerWallet,
-      [dto.escrowId],
-    );
+    return this.soroban.buildContractCallXdr('resolve_dispute', dto.callerWallet, [
+      dto.escrowId,
+    ]);
   }
 
   /**

@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { HealthCheckError, HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
+import {
+  HealthCheckError,
+  HealthIndicator,
+  HealthIndicatorResult,
+} from '@nestjs/terminus';
 import { Pool } from 'pg';
 import { PG_POOL } from '../../database/pg-pool.provider';
 

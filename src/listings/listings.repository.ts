@@ -35,10 +35,7 @@ export class ListingsRepository {
   }
 
   async findById(id: string) {
-    const { rows } = await this.pool.query(
-      `SELECT * FROM listings WHERE id = $1`,
-      [id],
-    );
+    const { rows } = await this.pool.query(`SELECT * FROM listings WHERE id = $1`, [id]);
     return rows[0] ?? null;
   }
 
@@ -64,10 +61,9 @@ export class ListingsRepository {
   }
 
   async delete(id: string) {
-    const { rowCount } = await this.pool.query(
-      `DELETE FROM listings WHERE id = $1`,
-      [id],
-    );
+    const { rowCount } = await this.pool.query(`DELETE FROM listings WHERE id = $1`, [
+      id,
+    ]);
     return (rowCount ?? 0) > 0;
   }
 }

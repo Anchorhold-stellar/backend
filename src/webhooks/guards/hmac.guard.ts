@@ -34,9 +34,7 @@ export class HmacGuard implements CanActivate {
       throw new UnauthorizedException('raw body unavailable for signature verification');
     }
 
-    const expected = createHmac('sha256', secret)
-      .update(request.rawBody)
-      .digest('hex');
+    const expected = createHmac('sha256', secret).update(request.rawBody).digest('hex');
     const provided = header.slice('sha256='.length);
 
     const expectedBuf = Buffer.from(expected, 'hex');
