@@ -8,9 +8,11 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -18,6 +20,7 @@ import { ListListingsQueryDto } from './dto/list-listings-query.dto';
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
 import { assertWalletMatches } from '../common/assert-wallet-match';
+import { setTotalCountHeader } from '../common/pagination';
 
 @ApiTags('listings')
 @Controller('listings')
@@ -25,8 +28,16 @@ export class ListingsController {
   constructor(private readonly listings: ListingsService) {}
 
   @Get()
-  findAll(@Query() query: ListListingsQueryDto) {
-    return this.listings.findAll(query);
+  async findAll(
+    @Query() query: ListListingsQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const [rows, total] = await Promise.all([
+      this.listings.findAll(query),
+      this.listings.count(query),
+    ]);
+    setTotalCountHeader(res, total);
+    return rows;
   }
 
   @Get(':id')

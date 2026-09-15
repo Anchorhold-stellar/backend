@@ -9,7 +9,7 @@ import { ListListingsQueryDto } from './dto/list-listings-query.dto';
 export class ListingsRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
-  async findAll(query: ListListingsQueryDto) {
+  private buildFilter(query: ListListingsQueryDto): { where: string; params: unknown[] } {
     const conditions: string[] = ['deleted_at IS NULL'];
     const params: unknown[] = [];
 
@@ -22,15 +22,29 @@ export class ListingsRepository {
       conditions.push(`host_wallet = $${params.length}`);
     }
 
-    params.push(query.limit, query.offset);
+    return { where: conditions.join(' AND '), params };
+  }
+
+  async findAll(query: ListListingsQueryDto) {
+    const { where, params } = this.buildFilter(query);
+    const listParams = [...params, query.limit, query.offset];
 
     const { rows } = await this.pool.query(
-      `SELECT * FROM listings WHERE ${conditions.join(' AND ')}
+      `SELECT * FROM listings WHERE ${where}
        ORDER BY created_at DESC
-       LIMIT $${params.length - 1} OFFSET $${params.length}`,
-      params,
+       LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
+      listParams,
     );
     return rows;
+  }
+
+  async count(query: ListListingsQueryDto): Promise<number> {
+    const { where, params } = this.buildFilter(query);
+    const { rows } = await this.pool.query(
+      `SELECT count(*) FROM listings WHERE ${where}`,
+      params,
+    );
+    return Number(rows[0].count);
   }
 
   async findById(id: string) {

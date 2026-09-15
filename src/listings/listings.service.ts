@@ -12,6 +12,10 @@ export class ListingsService {
     return this.listings.findAll(query);
   }
 
+  count(query: ListListingsQueryDto) {
+    return this.listings.count(query);
+  }
+
   async findById(id: string) {
     const listing = await this.listings.findById(id);
     if (!listing) {

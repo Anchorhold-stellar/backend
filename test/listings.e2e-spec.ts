@@ -78,6 +78,7 @@ describeIfDb('Listings (e2e)', () => {
       .get(`/v1/listings?hostWallet=${kp.publicKey()}`)
       .expect(200);
     expect(listRes.body).toHaveLength(1);
+    expect(listRes.headers['x-total-count']).toBe('1');
 
     await request(app.getHttpServer())
       .get(`/v1/listings/${createRes.body.id}`)
