@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -7,7 +8,14 @@ import { applyGlobalMiddleware } from './bootstrap';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
-  app.enableCors();
+
+  // Unset (default) reflects the request origin, i.e. allow-all -- the
+  // same behavior as a bare enableCors(). Set to a comma-separated list
+  // to restrict it in production.
+  const corsOrigin = app.get(ConfigService).get<string>('CORS_ORIGIN');
+  app.enableCors({
+    origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()) : true,
+  });
   app.enableShutdownHooks();
   // Swagger UI at /docs needs inline scripts/styles; helmet's default CSP
   // would block them. This is a JSON API whose only served HTML page is
