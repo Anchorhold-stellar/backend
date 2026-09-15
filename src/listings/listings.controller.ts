@@ -8,11 +8,15 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { ListListingsQueryDto } from './dto/list-listings-query.dto';
+import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
+import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
+import { assertWalletMatches } from '../common/assert-wallet-match';
 
 @Controller('listings')
 export class ListingsController {
@@ -29,18 +33,26 @@ export class ListingsController {
   }
 
   @Post()
-  create(@Body() dto: CreateListingDto) {
+  @UseGuards(WalletAuthGuard)
+  create(@Body() dto: CreateListingDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.hostWallet, wallet);
     return this.listings.create(dto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateListingDto) {
-    return this.listings.update(id, dto);
+  @UseGuards(WalletAuthGuard)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateListingDto,
+    @CurrentWallet() wallet: string,
+  ) {
+    return this.listings.update(id, dto, wallet);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id') id: string) {
-    return this.listings.delete(id);
+  @UseGuards(WalletAuthGuard)
+  remove(@Param('id') id: string, @CurrentWallet() wallet: string) {
+    return this.listings.delete(id, wallet);
   }
 }

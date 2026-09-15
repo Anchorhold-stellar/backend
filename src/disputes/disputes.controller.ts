@@ -1,9 +1,20 @@
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { DisputesService } from './disputes.service';
 import { AddEvidenceDto } from './dto/add-evidence.dto';
 import { BuildRaiseDisputeDto } from './dto/build-raise-dispute.dto';
 import { BuildVoteDisputeDto } from './dto/build-vote-dispute.dto';
 import { BuildResolveDisputeDto } from './dto/build-resolve-dispute.dto';
+import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
+import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
+import { assertWalletMatches } from '../common/assert-wallet-match';
 
 @Controller('disputes')
 export class DisputesController {
@@ -16,22 +27,34 @@ export class DisputesController {
 
   @Post(':escrowId/evidence')
   @HttpCode(201)
-  addEvidence(@Param('escrowId') escrowId: string, @Body() dto: AddEvidenceDto) {
+  @UseGuards(WalletAuthGuard)
+  addEvidence(
+    @Param('escrowId') escrowId: string,
+    @Body() dto: AddEvidenceDto,
+    @CurrentWallet() wallet: string,
+  ) {
+    assertWalletMatches(dto.submittedBy, wallet);
     return this.disputes.addEvidence(escrowId, dto);
   }
 
   @Post('build/raise')
-  buildRaise(@Body() dto: BuildRaiseDisputeDto) {
+  @UseGuards(WalletAuthGuard)
+  buildRaise(@Body() dto: BuildRaiseDisputeDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.callerWallet, wallet);
     return this.disputes.buildRaise(dto).then((xdr) => ({ xdr }));
   }
 
   @Post('build/vote')
-  buildVote(@Body() dto: BuildVoteDisputeDto) {
+  @UseGuards(WalletAuthGuard)
+  buildVote(@Body() dto: BuildVoteDisputeDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.jurorWallet, wallet);
     return this.disputes.buildVote(dto).then((xdr) => ({ xdr }));
   }
 
   @Post('build/resolve')
-  buildResolve(@Body() dto: BuildResolveDisputeDto) {
+  @UseGuards(WalletAuthGuard)
+  buildResolve(@Body() dto: BuildResolveDisputeDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.callerWallet, wallet);
     return this.disputes.buildResolve(dto).then((xdr) => ({ xdr }));
   }
 }

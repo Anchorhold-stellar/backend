@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ListingsRepository } from './listings.repository';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -24,7 +24,8 @@ export class ListingsService {
     return this.listings.create(dto);
   }
 
-  async update(id: string, dto: UpdateListingDto) {
+  async update(id: string, dto: UpdateListingDto, wallet: string) {
+    await this.assertOwnership(id, wallet);
     const listing = await this.listings.update(id, dto);
     if (!listing) {
       throw new NotFoundException('listing not found');
@@ -32,10 +33,21 @@ export class ListingsService {
     return listing;
   }
 
-  async delete(id: string) {
+  async delete(id: string, wallet: string) {
+    await this.assertOwnership(id, wallet);
     const deleted = await this.listings.delete(id);
     if (!deleted) {
       throw new NotFoundException('listing not found');
+    }
+  }
+
+  private async assertOwnership(id: string, wallet: string) {
+    const listing = await this.listings.findById(id);
+    if (!listing) {
+      throw new NotFoundException('listing not found');
+    }
+    if (listing.host_wallet !== wallet) {
+      throw new ForbiddenException('only the listing host can modify this listing');
     }
   }
 }

@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { EscrowService } from './escrow.service';
 import { BuildCreateEscrowDto } from './dto/build-create-escrow.dto';
 import { BuildDepositDto } from './dto/build-deposit.dto';
 import { BuildConfirmMilestoneDto } from './dto/build-confirm-milestone.dto';
 import { ListEscrowsQueryDto } from './dto/list-escrows-query.dto';
+import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
+import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
+import { assertWalletMatches } from '../common/assert-wallet-match';
 
 @Controller('escrows')
 export class EscrowController {
@@ -20,17 +23,26 @@ export class EscrowController {
   }
 
   @Post('build/create')
-  buildCreate(@Body() dto: BuildCreateEscrowDto) {
+  @UseGuards(WalletAuthGuard)
+  buildCreate(@Body() dto: BuildCreateEscrowDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.renterWallet, wallet);
     return this.escrows.buildCreate(dto).then((xdr) => ({ xdr }));
   }
 
   @Post('build/deposit')
-  buildDeposit(@Body() dto: BuildDepositDto) {
+  @UseGuards(WalletAuthGuard)
+  buildDeposit(@Body() dto: BuildDepositDto, @CurrentWallet() wallet: string) {
+    assertWalletMatches(dto.renterWallet, wallet);
     return this.escrows.buildDeposit(dto).then((xdr) => ({ xdr }));
   }
 
   @Post('build/confirm-milestone')
-  buildConfirmMilestone(@Body() dto: BuildConfirmMilestoneDto) {
+  @UseGuards(WalletAuthGuard)
+  buildConfirmMilestone(
+    @Body() dto: BuildConfirmMilestoneDto,
+    @CurrentWallet() wallet: string,
+  ) {
+    assertWalletMatches(dto.renterWallet, wallet);
     return this.escrows.buildConfirmMilestone(dto).then((xdr) => ({ xdr }));
   }
 }

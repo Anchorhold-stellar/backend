@@ -7,6 +7,6 @@ import { WalletAuthGuard } from './guards/wallet-auth.guard';
 @Module({
   controllers: [AuthController],
   providers: [AuthService, NonceStoreService, WalletAuthGuard],
-  exports: [WalletAuthGuard],
+  exports: [AuthService, NonceStoreService, WalletAuthGuard],
 })
 export class AuthModule {}
