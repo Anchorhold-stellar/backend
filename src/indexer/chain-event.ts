@@ -1,0 +1,36 @@
+export type ChainEvent =
+  | {
+      type: 'escrow_created';
+      ledger: number;
+      escrowId: number;
+      renter: string;
+      host: string;
+      asset: string;
+      totalAmount: string;
+    }
+  | {
+      type: 'escrow_funded';
+      ledger: number;
+      escrowId: number;
+    }
+  | {
+      type: 'milestone_released';
+      ledger: number;
+      escrowId: number;
+      milestoneIndex: number;
+      escrowCompleted?: boolean;
+    }
+  | {
+      type: 'dispute_opened';
+      ledger: number;
+      escrowId: number;
+      milestoneIndex: number;
+      openedBy: string;
+      evidenceUri: string;
+    }
+  | {
+      type: 'dispute_resolved';
+      ledger: number;
+      escrowId: number;
+      outcome: 'renter_wins' | 'host_wins';
+    };
