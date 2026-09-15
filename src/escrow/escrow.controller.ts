@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { EscrowService } from './escrow.service';
 import { BuildCreateEscrowDto } from './dto/build-create-escrow.dto';
 import { BuildDepositDto } from './dto/build-deposit.dto';
@@ -9,6 +10,7 @@ import { ListEscrowsQueryDto } from './dto/list-escrows-query.dto';
 import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
 import { assertWalletMatches } from '../common/assert-wallet-match';
+import { setTotalCountHeader } from '../common/pagination';
 
 @ApiTags('escrows')
 @Controller('escrows')
@@ -16,8 +18,16 @@ export class EscrowController {
   constructor(private readonly escrows: EscrowService) {}
 
   @Get()
-  findByWallet(@Query() query: ListEscrowsQueryDto) {
-    return this.escrows.findByWallet(query);
+  async findByWallet(
+    @Query() query: ListEscrowsQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const [rows, total] = await Promise.all([
+      this.escrows.findByWallet(query),
+      this.escrows.count(query),
+    ]);
+    setTotalCountHeader(res, total);
+    return rows;
   }
 
   @Get(':escrowId')

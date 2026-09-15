@@ -7,7 +7,7 @@ import { ListEscrowsQueryDto } from './dto/list-escrows-query.dto';
 export class EscrowRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
-  async findByWallet(query: ListEscrowsQueryDto) {
+  private buildFilter(query: ListEscrowsQueryDto): { where: string; params: unknown[] } {
     const conditions = ['(renter_wallet = $1 OR host_wallet = $1)'];
     const params: unknown[] = [query.wallet];
 
@@ -16,15 +16,29 @@ export class EscrowRepository {
       conditions.push(`status = $${params.length}`);
     }
 
-    params.push(query.limit, query.offset);
+    return { where: conditions.join(' AND '), params };
+  }
+
+  async findByWallet(query: ListEscrowsQueryDto) {
+    const { where, params } = this.buildFilter(query);
+    const listParams = [...params, query.limit, query.offset];
 
     const { rows } = await this.pool.query(
-      `SELECT * FROM escrows WHERE ${conditions.join(' AND ')}
+      `SELECT * FROM escrows WHERE ${where}
        ORDER BY created_at DESC
-       LIMIT $${params.length - 1} OFFSET $${params.length}`,
-      params,
+       LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
+      listParams,
     );
     return rows;
+  }
+
+  async count(query: ListEscrowsQueryDto): Promise<number> {
+    const { where, params } = this.buildFilter(query);
+    const { rows } = await this.pool.query(
+      `SELECT count(*) FROM escrows WHERE ${where}`,
+      params,
+    );
+    return Number(rows[0].count);
   }
 
   async findById(escrowId: string) {

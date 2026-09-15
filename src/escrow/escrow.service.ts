@@ -20,6 +20,10 @@ export class EscrowService {
     return this.escrows.findByWallet(query);
   }
 
+  count(query: ListEscrowsQueryDto) {
+    return this.escrows.count(query);
+  }
+
   async findById(escrowId: string) {
     const escrow = await this.escrows.findById(escrowId);
     if (!escrow) {
