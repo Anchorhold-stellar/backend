@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -41,7 +42,7 @@ export class ListingsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.listings.findById(id);
   }
 
@@ -55,7 +56,7 @@ export class ListingsController {
   @Patch(':id')
   @UseGuards(WalletAuthGuard)
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateListingDto,
     @CurrentWallet() wallet: string,
   ) {
@@ -65,7 +66,7 @@ export class ListingsController {
   @Delete(':id')
   @HttpCode(204)
   @UseGuards(WalletAuthGuard)
-  remove(@Param('id') id: string, @CurrentWallet() wallet: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentWallet() wallet: string) {
     return this.listings.delete(id, wallet);
   }
 }

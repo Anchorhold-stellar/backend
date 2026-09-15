@@ -51,6 +51,10 @@ describeIfDb('Listings (e2e)', () => {
     await request(app.getHttpServer()).get('/health').expect(200, { ok: true });
   });
 
+  it('400s for a malformed listing id instead of a raw DB error', async () => {
+    await request(app.getHttpServer()).get('/v1/listings/not-a-uuid').expect(400);
+  });
+
   it('rejects listing creation without wallet auth headers', async () => {
     await request(app.getHttpServer())
       .post('/v1/listings')
