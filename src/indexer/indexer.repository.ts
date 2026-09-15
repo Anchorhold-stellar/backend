@@ -14,9 +14,10 @@ export class IndexerRepository {
   }
 
   async setLastLedger(ledger: number): Promise<void> {
-    await this.pool.query(`UPDATE indexer_cursor SET last_ledger = $1 WHERE id = 1`, [
-      ledger,
-    ]);
+    await this.pool.query(
+      `UPDATE indexer_cursor SET last_ledger = $1, updated_at = now() WHERE id = 1`,
+      [ledger],
+    );
   }
 
   async createEscrow(
