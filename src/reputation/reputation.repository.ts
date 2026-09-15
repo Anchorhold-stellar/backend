@@ -1,10 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_POOL } from '../database/pg-pool.provider';
+import { LeaderboardQueryDto } from './dto/leaderboard-query.dto';
 
 @Injectable()
 export class ReputationRepository {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+
+  async findTop(query: LeaderboardQueryDto) {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM reputation ORDER BY score DESC, wallet ASC LIMIT $1 OFFSET $2`,
+      [query.limit, query.offset],
+    );
+    return rows;
+  }
 
   async findByWallet(wallet: string) {
     const { rows } = await this.pool.query(`SELECT * FROM reputation WHERE wallet = $1`, [

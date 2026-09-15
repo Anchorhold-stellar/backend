@@ -1,9 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ReputationRepository } from './reputation.repository';
+import { LeaderboardQueryDto } from './dto/leaderboard-query.dto';
 
 @Injectable()
 export class ReputationService {
   constructor(private readonly reputation: ReputationRepository) {}
+
+  findLeaderboard(query: LeaderboardQueryDto) {
+    return this.reputation.findTop(query);
+  }
 
   async findByWallet(wallet: string) {
     const record = await this.reputation.findByWallet(wallet);

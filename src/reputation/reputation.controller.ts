@@ -1,9 +1,15 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ReputationService } from './reputation.service';
+import { LeaderboardQueryDto } from './dto/leaderboard-query.dto';
 
 @Controller('reputation')
 export class ReputationController {
   constructor(private readonly reputation: ReputationService) {}
+
+  @Get()
+  findLeaderboard(@Query() query: LeaderboardQueryDto) {
+    return this.reputation.findLeaderboard(query);
+  }
 
   @Get(':wallet')
   findOne(@Param('wallet') wallet: string) {
