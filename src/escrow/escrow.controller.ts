@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { EscrowService } from './escrow.service';
 import { BuildCreateEscrowDto } from './dto/build-create-escrow.dto';
 import { BuildDepositDto } from './dto/build-deposit.dto';
@@ -9,6 +10,7 @@ import { WalletAuthGuard } from '../auth/guards/wallet-auth.guard';
 import { CurrentWallet } from '../auth/decorators/current-wallet.decorator';
 import { assertWalletMatches } from '../common/assert-wallet-match';
 
+@ApiTags('escrows')
 @Controller('escrows')
 export class EscrowController {
   constructor(private readonly escrows: EscrowService) {}
