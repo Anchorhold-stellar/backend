@@ -1,6 +1,6 @@
 -- SafeTrust v2 schema.
 -- These tables are a *read model* materialized from Soroban contract events
--- by the indexer (src/indexer/soroban-indexer.js). The contract is the
+-- by the indexer (src/indexer/indexer.service.ts). The contract is the
 -- source of truth for fund custody; Postgres/Hasura exist for fast reads,
 -- notifications, and evidence storage that doesn't belong on-chain.
 
