@@ -39,11 +39,11 @@ export const CONTRACT_METHODS: Record<string, ContractMethodSchema> = {
   },
   vote_dispute: {
     method: 'vote_dispute',
-    args: ['address', 'u32', 'bool'],
+    args: ['address', 'u32', 'u32', 'bool'],
   },
   resolve_dispute: {
     method: 'resolve_dispute',
-    args: ['u32'],
+    args: ['u32', 'u32'],
     permissionless: true,
   },
   cancel_escrow: {

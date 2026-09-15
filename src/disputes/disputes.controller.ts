@@ -41,26 +41,33 @@ export class DisputesController {
     return rows;
   }
 
-  @Get(':escrowId')
-  findOne(@Param('escrowId', ParseIntPipe) escrowId: number) {
-    return this.disputes.findByEscrowId(String(escrowId));
+  @Get(':escrowId/:milestoneIndex')
+  findOne(
+    @Param('escrowId', ParseIntPipe) escrowId: number,
+    @Param('milestoneIndex', ParseIntPipe) milestoneIndex: number,
+  ) {
+    return this.disputes.findOne(String(escrowId), milestoneIndex);
   }
 
-  @Get(':escrowId/votes')
-  findVotes(@Param('escrowId', ParseIntPipe) escrowId: number) {
-    return this.disputes.findVotes(String(escrowId));
+  @Get(':escrowId/:milestoneIndex/votes')
+  findVotes(
+    @Param('escrowId', ParseIntPipe) escrowId: number,
+    @Param('milestoneIndex', ParseIntPipe) milestoneIndex: number,
+  ) {
+    return this.disputes.findVotes(String(escrowId), milestoneIndex);
   }
 
-  @Post(':escrowId/evidence')
+  @Post(':escrowId/:milestoneIndex/evidence')
   @HttpCode(201)
   @UseGuards(WalletAuthGuard)
   addEvidence(
     @Param('escrowId', ParseIntPipe) escrowId: number,
+    @Param('milestoneIndex', ParseIntPipe) milestoneIndex: number,
     @Body() dto: AddEvidenceDto,
     @CurrentWallet() wallet: string,
   ) {
     assertWalletMatches(dto.submittedBy, wallet);
-    return this.disputes.addEvidence(String(escrowId), dto);
+    return this.disputes.addEvidence(String(escrowId), milestoneIndex, dto);
   }
 
   @Post('build/raise')

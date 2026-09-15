@@ -34,21 +34,21 @@ export class DisputesService {
     return this.disputes.count(query);
   }
 
-  async findByEscrowId(escrowId: string) {
-    const dispute = await this.disputes.findByEscrowId(escrowId);
+  async findOne(escrowId: string, milestoneIndex: number) {
+    const dispute = await this.disputes.findOne(escrowId, milestoneIndex);
     if (!dispute) {
-      throw new NotFoundException('no dispute for this escrow');
+      throw new NotFoundException('no dispute for this escrow/milestone');
     }
-    const evidence = await this.disputes.findEvidence(escrowId);
+    const evidence = await this.disputes.findEvidence(escrowId, milestoneIndex);
     return { ...dispute, evidence };
   }
 
-  async findVotes(escrowId: string) {
-    const dispute = await this.disputes.findByEscrowId(escrowId);
+  async findVotes(escrowId: string, milestoneIndex: number) {
+    const dispute = await this.disputes.findOne(escrowId, milestoneIndex);
     if (!dispute) {
-      throw new NotFoundException('no dispute for this escrow');
+      throw new NotFoundException('no dispute for this escrow/milestone');
     }
-    const votes = await this.disputes.findVotes(escrowId);
+    const votes = await this.disputes.findVotes(escrowId, milestoneIndex);
     const forRenter = votes.filter((v) => v.vote_for_renter).length;
     return {
       votes,
@@ -56,9 +56,10 @@ export class DisputesService {
     };
   }
 
-  addEvidence(escrowId: string, dto: AddEvidenceDto) {
+  addEvidence(escrowId: string, milestoneIndex: number, dto: AddEvidenceDto) {
     return this.disputes.addEvidence(
       escrowId,
+      milestoneIndex,
       dto.submittedBy,
       dto.uri,
       dto.note ?? null,
@@ -78,6 +79,7 @@ export class DisputesService {
     return this.soroban.buildContractCallXdr('vote_dispute', dto.jurorWallet, [
       dto.jurorWallet,
       dto.escrowId,
+      dto.milestoneIndex,
       dto.voteForRenter,
     ]);
   }
@@ -85,12 +87,18 @@ export class DisputesService {
   buildResolve(dto: BuildResolveDisputeDto) {
     return this.soroban.buildContractCallXdr('resolve_dispute', dto.callerWallet, [
       dto.escrowId,
+      dto.milestoneIndex,
     ]);
   }
 
   /** Applies a `dispute_voted` on-chain event — see applyResolution below for why this isn't an HTTP route. */
-  recordVote(escrowId: number, jurorWallet: string, voteForRenter: boolean) {
-    return this.disputes.recordVote(escrowId, jurorWallet, voteForRenter);
+  recordVote(
+    escrowId: number,
+    milestoneIndex: number,
+    jurorWallet: string,
+    voteForRenter: boolean,
+  ) {
+    return this.disputes.recordVote(escrowId, milestoneIndex, jurorWallet, voteForRenter);
   }
 
   /**
@@ -101,8 +109,8 @@ export class DisputesService {
    * since the contract (not this backend) is the source of truth for who
    * won.
    */
-  async applyResolution(escrowId: string, outcome: DisputeOutcome) {
-    await this.disputes.markResolved(escrowId, outcome);
+  async applyResolution(escrowId: string, milestoneIndex: number, outcome: DisputeOutcome) {
+    await this.disputes.markResolved(escrowId, milestoneIndex, outcome);
 
     const escrow = await this.escrows.findById(escrowId);
     if (!escrow) {

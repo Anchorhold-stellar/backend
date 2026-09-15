@@ -85,10 +85,15 @@ export class IndexerRepository {
     openedBy: string,
     evidenceUri: string,
   ) {
+    // Composite conflict target: an escrow can have several milestones,
+    // each with its own dispute over the escrow's lifetime. Conflicting
+    // only on escrow_id would silently drop a genuinely new dispute on a
+    // different milestone once any dispute (even a resolved one) already
+    // existed for this escrow.
     await this.pool.query(
       `INSERT INTO disputes (escrow_id, milestone_index, opened_by_wallet, evidence_uri)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (escrow_id) DO NOTHING`,
+       ON CONFLICT (escrow_id, milestone_index) DO NOTHING`,
       [escrowId, milestoneIndex, openedBy, evidenceUri],
     );
   }

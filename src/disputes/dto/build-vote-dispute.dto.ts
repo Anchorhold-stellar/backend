@@ -12,6 +12,10 @@ export class BuildVoteDisputeDto {
   escrowId: number;
 
   @ApiProperty()
+  @IsInt()
+  milestoneIndex: number;
+
+  @ApiProperty()
   @IsBoolean()
   voteForRenter: boolean;
 }

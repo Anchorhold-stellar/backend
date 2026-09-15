@@ -41,63 +41,72 @@ export class DisputesRepository {
     return Number(rows[0].count);
   }
 
-  async findByEscrowId(escrowId: string) {
+  async findOne(escrowId: string, milestoneIndex: number) {
     const { rows } = await this.pool.query(
-      `SELECT * FROM disputes WHERE escrow_id = $1`,
-      [escrowId],
+      `SELECT * FROM disputes WHERE escrow_id = $1 AND milestone_index = $2`,
+      [escrowId, milestoneIndex],
     );
     return rows[0] ?? null;
   }
 
-  async findEvidence(escrowId: string) {
+  async findEvidence(escrowId: string, milestoneIndex: number) {
     const { rows } = await this.pool.query(
-      `SELECT * FROM dispute_evidence WHERE escrow_id = $1 ORDER BY created_at ASC`,
-      [escrowId],
+      `SELECT * FROM dispute_evidence
+       WHERE escrow_id = $1 AND milestone_index = $2
+       ORDER BY created_at ASC`,
+      [escrowId, milestoneIndex],
     );
     return rows;
   }
 
   async addEvidence(
     escrowId: string,
+    milestoneIndex: number,
     submittedBy: string,
     uri: string,
     note: string | null,
   ) {
     const { rows } = await this.pool.query(
-      `INSERT INTO dispute_evidence (escrow_id, submitted_by, uri, note)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [escrowId, submittedBy, uri, note],
+      `INSERT INTO dispute_evidence (escrow_id, milestone_index, submitted_by, uri, note)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [escrowId, milestoneIndex, submittedBy, uri, note],
     );
     return rows[0];
   }
 
-  async markResolved(escrowId: string, outcome: string) {
+  async markResolved(escrowId: string, milestoneIndex: number, outcome: string) {
     const { rows } = await this.pool.query(
-      `UPDATE disputes SET resolved = true, outcome = $2, resolved_at = now()
-       WHERE escrow_id = $1 RETURNING *`,
-      [escrowId, outcome],
+      `UPDATE disputes SET resolved = true, outcome = $3, resolved_at = now()
+       WHERE escrow_id = $1 AND milestone_index = $2 RETURNING *`,
+      [escrowId, milestoneIndex, outcome],
     );
     return rows[0] ?? null;
   }
 
-  async findVotes(escrowId: string) {
+  async findVotes(escrowId: string, milestoneIndex: number) {
     const { rows } = await this.pool.query(
-      `SELECT * FROM votes WHERE escrow_id = $1 ORDER BY voted_at ASC`,
-      [escrowId],
+      `SELECT * FROM votes WHERE escrow_id = $1 AND milestone_index = $2 ORDER BY voted_at ASC`,
+      [escrowId, milestoneIndex],
     );
     return rows;
   }
 
-  async recordVote(escrowId: number, jurorWallet: string, voteForRenter: boolean) {
-    // A juror voting again for the same escrow replaces their earlier
-    // vote rather than erroring or duplicating — the UNIQUE(escrow_id,
-    // juror_wallet) constraint exists precisely to make that safe.
+  async recordVote(
+    escrowId: number,
+    milestoneIndex: number,
+    jurorWallet: string,
+    voteForRenter: boolean,
+  ) {
+    // A juror voting again for the same escrow+milestone replaces their
+    // earlier vote rather than erroring or duplicating — the
+    // UNIQUE(escrow_id, milestone_index, juror_wallet) constraint exists
+    // precisely to make that safe.
     await this.pool.query(
-      `INSERT INTO votes (escrow_id, juror_wallet, vote_for_renter)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (escrow_id, juror_wallet) DO UPDATE
+      `INSERT INTO votes (escrow_id, milestone_index, juror_wallet, vote_for_renter)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (escrow_id, milestone_index, juror_wallet) DO UPDATE
          SET vote_for_renter = EXCLUDED.vote_for_renter, voted_at = now()`,
-      [escrowId, jurorWallet, voteForRenter],
+      [escrowId, milestoneIndex, jurorWallet, voteForRenter],
     );
   }
 }

@@ -115,13 +115,19 @@ export class IndexerService implements OnModuleInit {
       case 'dispute_voted':
         return this.disputes.recordVote(
           event.escrowId,
+          event.milestoneIndex,
           event.jurorWallet,
           event.voteForRenter,
         );
       case 'dispute_resolved':
-        await this.disputes.applyResolution(String(event.escrowId), event.outcome);
+        await this.disputes.applyResolution(
+          String(event.escrowId),
+          event.milestoneIndex,
+          event.outcome,
+        );
         await this.notifications.notify('dispute_resolved', {
           escrowId: event.escrowId,
+          milestoneIndex: event.milestoneIndex,
           outcome: event.outcome,
         });
         return;

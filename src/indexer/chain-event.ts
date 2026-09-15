@@ -42,12 +42,14 @@ export type ChainEvent =
       type: 'dispute_resolved';
       ledger: number;
       escrowId: number;
+      milestoneIndex: number;
       outcome: 'renter_wins' | 'host_wins';
     }
   | {
       type: 'dispute_voted';
       ledger: number;
       escrowId: number;
+      milestoneIndex: number;
       jurorWallet: string;
       voteForRenter: boolean;
     };

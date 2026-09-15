@@ -94,6 +94,7 @@ export class SorobanRpcEventsAdapter implements SorobanEventsPort {
             type: 'dispute_voted',
             ledger: raw.ledger,
             escrowId: Number(payload.escrowId),
+            milestoneIndex: Number(payload.milestoneIndex),
             jurorWallet: String(payload.jurorWallet),
             voteForRenter: Boolean(payload.voteForRenter),
           };
@@ -102,6 +103,7 @@ export class SorobanRpcEventsAdapter implements SorobanEventsPort {
             type: 'dispute_resolved',
             ledger: raw.ledger,
             escrowId: Number(payload.escrowId),
+            milestoneIndex: Number(payload.milestoneIndex),
             outcome: payload.outcome === 'renter_wins' ? 'renter_wins' : 'host_wins',
           };
         default:

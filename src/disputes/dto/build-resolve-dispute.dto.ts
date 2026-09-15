@@ -19,4 +19,8 @@ export class BuildResolveDisputeDto {
   @ApiProperty()
   @IsInt()
   escrowId: number;
+
+  @ApiProperty()
+  @IsInt()
+  milestoneIndex: number;
 }

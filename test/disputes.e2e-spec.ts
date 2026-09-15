@@ -6,6 +6,7 @@ import { Keypair } from '@stellar/stellar-sdk';
 import { AppModule } from '../src/app.module';
 import { applyGlobalMiddleware } from '../src/bootstrap';
 import { PG_POOL } from '../src/database/pg-pool.provider';
+import { IndexerRepository } from '../src/indexer/indexer.repository';
 
 const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
 
@@ -59,21 +60,22 @@ describeIfDb('Disputes (e2e)', () => {
     return { 'X-Wallet-Address': kp.publicKey(), 'X-Wallet-Signature': signature };
   }
 
-  it('404s for an escrow with no dispute', async () => {
-    await request(app.getHttpServer()).get('/v1/disputes/999999999').expect(404);
+  it('404s for an escrow/milestone with no dispute', async () => {
+    await request(app.getHttpServer()).get('/v1/disputes/999999999/0').expect(404);
   });
 
   it('400s for a non-numeric escrowId in the path instead of a raw DB error', async () => {
-    await request(app.getHttpServer()).get('/v1/disputes/not-a-number').expect(400);
+    await request(app.getHttpServer()).get('/v1/disputes/not-a-number/0').expect(400);
   });
 
   it('fetches a dispute with its evidence', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/v1/disputes/${escrowId}`)
+      .get(`/v1/disputes/${escrowId}/0`)
       .expect(200);
 
     expect(res.body).toMatchObject({
       escrowId,
+      milestoneIndex: 0,
       openedByWallet: 'GRENTER',
       resolved: false,
       evidence: [],
@@ -82,7 +84,7 @@ describeIfDb('Disputes (e2e)', () => {
 
   it('rejects evidence submission without wallet auth', async () => {
     await request(app.getHttpServer())
-      .post(`/v1/disputes/${escrowId}/evidence`)
+      .post(`/v1/disputes/${escrowId}/0/evidence`)
       .send({ submittedBy: 'GRENTER', uri: 'ipfs://proof' })
       .expect(401);
   });
@@ -97,7 +99,7 @@ describeIfDb('Disputes (e2e)', () => {
       .toString('base64');
 
     await request(app.getHttpServer())
-      .post(`/v1/disputes/${escrowId}/evidence`)
+      .post(`/v1/disputes/${escrowId}/0/evidence`)
       .set('X-Wallet-Address', kp.publicKey())
       .set('X-Wallet-Signature', signature)
       .send({ submittedBy: 'GSOMEONE-ELSE', uri: 'ipfs://proof' })
@@ -114,14 +116,14 @@ describeIfDb('Disputes (e2e)', () => {
       .toString('base64');
 
     await request(app.getHttpServer())
-      .post(`/v1/disputes/${escrowId}/evidence`)
+      .post(`/v1/disputes/${escrowId}/0/evidence`)
       .set('X-Wallet-Address', kp.publicKey())
       .set('X-Wallet-Signature', signature)
       .send({ submittedBy: kp.publicKey(), uri: 'ipfs://proof', note: 'photo' })
       .expect(201);
 
     const res = await request(app.getHttpServer())
-      .get(`/v1/disputes/${escrowId}`)
+      .get(`/v1/disputes/${escrowId}/0`)
       .expect(200);
     expect(res.body.evidence).toHaveLength(1);
     expect(res.body.evidence[0]).toMatchObject({
@@ -130,13 +132,13 @@ describeIfDb('Disputes (e2e)', () => {
     });
   });
 
-  it('404s for votes on an escrow with no dispute', async () => {
-    await request(app.getHttpServer()).get('/v1/disputes/999999999/votes').expect(404);
+  it('404s for votes on an escrow/milestone with no dispute', async () => {
+    await request(app.getHttpServer()).get('/v1/disputes/999999999/0/votes').expect(404);
   });
 
   it('returns an empty tally before any juror has voted', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/v1/disputes/${escrowId}/votes`)
+      .get(`/v1/disputes/${escrowId}/0/votes`)
       .expect(200);
 
     expect(res.body).toEqual({ votes: [], tally: { forRenter: 0, forHost: 0 } });
@@ -144,23 +146,57 @@ describeIfDb('Disputes (e2e)', () => {
 
   it('tallies votes seeded via the indexer path', async () => {
     await pool.query(
-      `INSERT INTO votes (escrow_id, juror_wallet, vote_for_renter) VALUES ($1, 'GJUROR1', true), ($1, 'GJUROR2', true), ($1, 'GJUROR3', false)`,
+      `INSERT INTO votes (escrow_id, milestone_index, juror_wallet, vote_for_renter) VALUES ($1, 0, 'GJUROR1', true), ($1, 0, 'GJUROR2', true), ($1, 0, 'GJUROR3', false)`,
       [escrowId],
     );
 
     const res = await request(app.getHttpServer())
-      .get(`/v1/disputes/${escrowId}/votes`)
+      .get(`/v1/disputes/${escrowId}/0/votes`)
       .expect(200);
 
     expect(res.body.tally).toEqual({ forRenter: 2, forHost: 1 });
     expect(res.body.votes).toHaveLength(3);
   });
 
+  it('records a second dispute on a different milestone of the same escrow, instead of dropping it', async () => {
+    // Regression test for the bug that motivated the composite-key
+    // migration: IndexerRepository.openDispute() used to conflict on
+    // escrow_id alone, so once escrow_id had ANY dispute row (even this
+    // suite's milestone-0 one, seeded in beforeAll), a genuinely new
+    // dispute on a different milestone of the same escrow was silently
+    // dropped -- never indexed, no error. Goes through the real
+    // IndexerRepository, not a direct INSERT, to exercise the exact
+    // conflict-target logic that was broken.
+    const indexerRepo = new IndexerRepository(pool);
+
+    await indexerRepo.openDispute(escrowId, 1, 'GRENTER', 'ipfs://second-dispute');
+
+    const res = await request(app.getHttpServer())
+      .get(`/v1/disputes/${escrowId}/1`)
+      .expect(200);
+    expect(res.body).toMatchObject({
+      escrowId,
+      milestoneIndex: 1,
+      openedByWallet: 'GRENTER',
+      evidenceUri: 'ipfs://second-dispute',
+    });
+
+    // The original milestone-0 dispute must be untouched.
+    const original = await request(app.getHttpServer())
+      .get(`/v1/disputes/${escrowId}/0`)
+      .expect(200);
+    expect(original.body.evidenceUri).toBe('ipfs://initial');
+
+    await pool.query(`DELETE FROM disputes WHERE escrow_id = $1 AND milestone_index = 1`, [
+      escrowId,
+    ]);
+  });
+
   describe('build/raise, build/vote, build/resolve', () => {
     const cases = [
       { path: 'build/raise', field: 'callerWallet', body: { escrowId: 1, milestoneIndex: 0, evidenceUri: 'ipfs://x' } },
-      { path: 'build/vote', field: 'jurorWallet', body: { escrowId: 1, voteForRenter: true } },
-      { path: 'build/resolve', field: 'callerWallet', body: { escrowId: 1 } },
+      { path: 'build/vote', field: 'jurorWallet', body: { escrowId: 1, milestoneIndex: 0, voteForRenter: true } },
+      { path: 'build/resolve', field: 'callerWallet', body: { escrowId: 1, milestoneIndex: 0 } },
     ];
 
     it.each(cases)('rejects $path without wallet auth', async ({ path, field, body }) => {
