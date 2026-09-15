@@ -6,6 +6,7 @@ import { SorobanModule } from './soroban/soroban.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { DisputesModule } from './disputes/disputes.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { ListingsModule } from './listings/listings.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -16,6 +17,7 @@ import { validateEnv } from './config/env.validation';
     EscrowModule,
     DisputesModule,
     WebhooksModule,
+    ListingsModule,
   ],
   controllers: [AppController],
 })
