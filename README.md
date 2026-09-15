@@ -70,9 +70,22 @@ or local runs of `npm test` never depend on Docker being available.
 | `auth` | Wallet-signature challenge/verify, `WalletAuthGuard` |
 | `webhooks` | Out-of-band keeper-ping, HMAC-verified |
 | `notifications` | Configurable outbound webhook fan-out on key domain events |
-| `health` | Liveness (`/health`) and DB readiness (`/health/ready`) checks |
+| `health` | Liveness (`/health`), DB + memory readiness (`/health/ready`) checks |
 | `indexer` | Polls Soroban contract events and applies them to the read model |
-| `common` | Global exception filter, camelCase response interceptor, request logging, pagination DTO, wallet-identity assertion |
+| `indexer-status` | Read-only `GET /indexer/status` — reports the indexer's last-processed ledger and whether it's gone stale |
+| `common` | Global exception filter, camelCase response interceptor, request logging, correlation ID, pagination/total-count helpers, wallet-identity assertion |
+
+## API conventions
+
+- **Pagination**: list endpoints (`GET /listings`, `/escrows`, `/disputes`,
+  `/jurors`, `/reputation`) take `page`/`limit` and return a bare array,
+  with total matching rows in an `X-Total-Count` response header.
+- **Rate limiting**: a global limit applies to every route (default
+  120req/60s, configurable via `THROTTLE_TTL_MS`/`THROTTLE_LIMIT`);
+  `GET /auth/challenge` has a tighter fixed limit (10req/60s) since it's
+  unauthenticated by design.
+- **CORS**: allows any origin by default; set `CORS_ORIGIN` (comma-separated)
+  to restrict it.
 
 ## Auth
 
