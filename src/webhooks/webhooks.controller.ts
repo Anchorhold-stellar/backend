@@ -1,6 +1,7 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { KeeperPingDto } from './dto/keeper-ping.dto';
+import { HmacGuard } from './guards/hmac.guard';
 
 /**
  * Generic inbound webhook for off-chain integrations — e.g. a keeper
@@ -18,6 +19,7 @@ export class WebhooksController {
 
   @Post('keeper-ping')
   @HttpCode(204)
+  @UseGuards(HmacGuard)
   async keeperPing(@Body() dto: KeeperPingDto) {
     await this.webhooks.keeperPing(dto);
   }
