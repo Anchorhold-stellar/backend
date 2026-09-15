@@ -28,12 +28,13 @@ export class IndexerRepository {
     asset: string,
     totalAmount: string,
     milestones: MilestoneDefinition[],
+    listingId: string | null = null,
   ) {
     await this.pool.query(
-      `INSERT INTO escrows (escrow_id, renter_wallet, host_wallet, asset_address, total_amount, status)
-       VALUES ($1, $2, $3, $4, $5, 'created')
+      `INSERT INTO escrows (escrow_id, listing_id, renter_wallet, host_wallet, asset_address, total_amount, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'created')
        ON CONFLICT (escrow_id) DO NOTHING`,
-      [escrowId, renter, host, asset, totalAmount],
+      [escrowId, listingId, renter, host, asset, totalAmount],
     );
 
     // Without this, the milestones table never gets a row for this escrow

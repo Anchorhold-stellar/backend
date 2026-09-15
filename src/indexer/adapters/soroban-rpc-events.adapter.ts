@@ -64,6 +64,7 @@ export class SorobanRpcEventsAdapter implements SorobanEventsPort {
             asset: String(payload.asset),
             totalAmount: String(payload.totalAmount),
             milestones: this.decodeMilestones(payload.milestones),
+            listingId: payload.listingId ? String(payload.listingId) : null,
           };
         case 'escrow_funded':
           return {

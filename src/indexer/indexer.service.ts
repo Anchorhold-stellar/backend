@@ -69,6 +69,7 @@ export class IndexerService {
           event.asset,
           event.totalAmount,
           event.milestones,
+          event.listingId ?? null,
         );
       case 'escrow_funded':
         await this.indexer.fundEscrow(event.escrowId);

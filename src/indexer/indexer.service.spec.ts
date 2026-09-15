@@ -39,6 +39,7 @@ describe('IndexerService', () => {
       expect.any(String),
       '1000',
       expect.arrayContaining([expect.objectContaining({ index: 0 })]),
+      null,
     );
     expect(indexerRepo.fundEscrow).toHaveBeenCalledWith(1);
     expect(indexerRepo.releaseMilestone).toHaveBeenCalledWith(1, 0);

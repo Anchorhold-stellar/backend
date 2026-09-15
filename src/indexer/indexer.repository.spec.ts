@@ -32,4 +32,24 @@ describe('IndexerRepository.createEscrow', () => {
 
     expect(pool.query).toHaveBeenCalledTimes(1);
   });
+
+  it('defaults listing_id to null when the escrow was not created against a listing', async () => {
+    const { repo, pool } = makeRepo();
+
+    await repo.createEscrow(1, 'GRENTER', 'GHOST', 'GASSET', '1000', []);
+
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toContain('listing_id');
+    expect(params).toEqual([1, null, 'GRENTER', 'GHOST', 'GASSET', '1000']);
+  });
+
+  it('includes listing_id when the escrow was created against a listing', async () => {
+    const { repo, pool } = makeRepo();
+    const listingId = '11111111-1111-1111-1111-111111111111';
+
+    await repo.createEscrow(1, 'GRENTER', 'GHOST', 'GASSET', '1000', [], listingId);
+
+    const [, params] = pool.query.mock.calls[0];
+    expect(params).toEqual([1, listingId, 'GRENTER', 'GHOST', 'GASSET', '1000']);
+  });
 });

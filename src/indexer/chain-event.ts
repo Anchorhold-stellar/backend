@@ -15,6 +15,8 @@ export type ChainEvent =
       asset: string;
       totalAmount: string;
       milestones: MilestoneDefinition[];
+      /** Null when the escrow wasn't created against an off-chain listing. */
+      listingId?: string | null;
     }
   | {
       type: 'escrow_funded';
