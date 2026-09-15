@@ -13,6 +13,7 @@ import { ListingsModule } from './listings/listings.module';
 import { AuthModule } from './auth/auth.module';
 import { JurorsModule } from './jurors/jurors.module';
 import { ReputationModule } from './reputation/reputation.module';
+import { HealthModule } from './health/health.module';
 import { validateEnv } from './config/env.validation';
 
 // Note: IndexerModule is intentionally NOT imported here. It runs as its
@@ -34,6 +35,7 @@ import { validateEnv } from './config/env.validation';
     AuthModule,
     JurorsModule,
     ReputationModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
