@@ -65,9 +65,20 @@ export class EscrowRepository {
   }
 
   async findDueMilestones() {
+    // A milestone under an open (unresolved) dispute must never be
+    // auto-released -- that would release funds out from under an active
+    // adjudication, defeating the entire point of raising a dispute.
     const { rows } = await this.pool.query(
-      `SELECT * FROM milestones
-       WHERE auto_release_at IS NOT NULL AND auto_release_at <= now() AND released = false`,
+      `SELECT m.* FROM milestones m
+       WHERE m.auto_release_at IS NOT NULL
+         AND m.auto_release_at <= now()
+         AND m.released = false
+         AND NOT EXISTS (
+           SELECT 1 FROM disputes d
+           WHERE d.escrow_id = m.escrow_id
+             AND d.milestone_index = m.milestone_index
+             AND d.resolved = false
+         )`,
     );
     return rows;
   }
