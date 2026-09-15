@@ -5,6 +5,7 @@ import { applyGlobalMiddleware } from './bootstrap';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   app.enableCors();
+  app.enableShutdownHooks();
   applyGlobalMiddleware(app);
 
   const port = process.env.PORT ?? 3002;
