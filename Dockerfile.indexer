@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+#
+# Separate image from the API's Dockerfile on purpose -- the indexer is a
+# distinct process by design (see src/indexer/indexer.main.ts and the
+# README's "Indexer" section), not something the API image should also be
+# capable of running.
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY tsconfig*.json nest-cli.json ./
+COPY src ./src
+RUN npm run build
+
+FROM node:20-alpine AS production
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist ./dist
+
+RUN addgroup -S safetrust && adduser -S safetrust -G safetrust
+USER safetrust
+
+CMD ["node", "dist/indexer/indexer.main.js"]
