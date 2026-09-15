@@ -32,4 +32,9 @@ export class JurorsRepository {
     );
     return rows;
   }
+
+  async count(): Promise<number> {
+    const { rows } = await this.pool.query(`SELECT count(*) FROM jurors`);
+    return Number(rows[0].count);
+  }
 }

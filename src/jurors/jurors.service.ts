@@ -22,4 +22,8 @@ export class JurorsService {
   findAll(query: ListJurorsQueryDto) {
     return this.jurors.findAll(query);
   }
+
+  count() {
+    return this.jurors.count();
+  }
 }

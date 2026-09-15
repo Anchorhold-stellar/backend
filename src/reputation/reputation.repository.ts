@@ -15,6 +15,11 @@ export class ReputationRepository {
     return rows;
   }
 
+  async count(): Promise<number> {
+    const { rows } = await this.pool.query(`SELECT count(*) FROM reputation`);
+    return Number(rows[0].count);
+  }
+
   async findByWallet(wallet: string) {
     const { rows } = await this.pool.query(`SELECT * FROM reputation WHERE wallet = $1`, [
       wallet,

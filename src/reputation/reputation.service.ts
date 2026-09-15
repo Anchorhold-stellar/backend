@@ -10,6 +10,10 @@ export class ReputationService {
     return this.reputation.findTop(query);
   }
 
+  countLeaderboard() {
+    return this.reputation.count();
+  }
+
   async findByWallet(wallet: string) {
     const record = await this.reputation.findByWallet(wallet);
     return record ?? { wallet, score: 0, updated_at: null };
