@@ -53,6 +53,10 @@ describeIfDb('Disputes (e2e)', () => {
     await request(app.getHttpServer()).get('/v1/disputes/999999999').expect(404);
   });
 
+  it('400s for a non-numeric escrowId in the path instead of a raw DB error', async () => {
+    await request(app.getHttpServer()).get('/v1/disputes/not-a-number').expect(400);
+  });
+
   it('fetches a dispute with its evidence', async () => {
     const res = await request(app.getHttpServer())
       .get(`/v1/disputes/${escrowId}`)

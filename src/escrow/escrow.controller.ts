@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { EscrowService } from './escrow.service';
@@ -31,8 +41,8 @@ export class EscrowController {
   }
 
   @Get(':escrowId')
-  findOne(@Param('escrowId') escrowId: string) {
-    return this.escrows.findById(escrowId);
+  findOne(@Param('escrowId', ParseIntPipe) escrowId: number) {
+    return this.escrows.findById(String(escrowId));
   }
 
   @Post('build/create')

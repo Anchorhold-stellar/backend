@@ -53,6 +53,10 @@ describeIfDb('Escrow cancellation (e2e)', () => {
     return { 'X-Wallet-Address': kp.publicKey(), 'X-Wallet-Signature': signature };
   }
 
+  it('400s for a non-numeric escrowId in the path instead of a raw DB error', async () => {
+    await request(app.getHttpServer()).get('/v1/escrows/not-a-number').expect(400);
+  });
+
   it('rejects cancellation without wallet auth', async () => {
     await request(app.getHttpServer())
       .post('/v1/escrows/build/cancel')

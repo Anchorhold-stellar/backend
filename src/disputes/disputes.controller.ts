@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Res,
@@ -41,25 +42,25 @@ export class DisputesController {
   }
 
   @Get(':escrowId')
-  findOne(@Param('escrowId') escrowId: string) {
-    return this.disputes.findByEscrowId(escrowId);
+  findOne(@Param('escrowId', ParseIntPipe) escrowId: number) {
+    return this.disputes.findByEscrowId(String(escrowId));
   }
 
   @Get(':escrowId/votes')
-  findVotes(@Param('escrowId') escrowId: string) {
-    return this.disputes.findVotes(escrowId);
+  findVotes(@Param('escrowId', ParseIntPipe) escrowId: number) {
+    return this.disputes.findVotes(String(escrowId));
   }
 
   @Post(':escrowId/evidence')
   @HttpCode(201)
   @UseGuards(WalletAuthGuard)
   addEvidence(
-    @Param('escrowId') escrowId: string,
+    @Param('escrowId', ParseIntPipe) escrowId: number,
     @Body() dto: AddEvidenceDto,
     @CurrentWallet() wallet: string,
   ) {
     assertWalletMatches(dto.submittedBy, wallet);
-    return this.disputes.addEvidence(escrowId, dto);
+    return this.disputes.addEvidence(String(escrowId), dto);
   }
 
   @Post('build/raise')
