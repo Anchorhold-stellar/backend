@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { SorobanModule } from './soroban/soroban.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { DisputesModule } from './disputes/disputes.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -14,6 +15,7 @@ import { validateEnv } from './config/env.validation';
     SorobanModule,
     EscrowModule,
     DisputesModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
 })
