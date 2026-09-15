@@ -9,7 +9,7 @@ import { PG_POOL } from '../src/database/pg-pool.provider';
 
 const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
 
-describeIfDb('Escrow cancellation (e2e)', () => {
+describeIfDb('Escrow build endpoints (e2e)', () => {
   let app: INestApplication;
   let pool: Pool;
   let createdEscrowId: number;
@@ -82,5 +82,32 @@ describeIfDb('Escrow cancellation (e2e)', () => {
       .expect(400);
 
     expect(res.body.message).toMatch(/cannot be cancelled/);
+  });
+
+  describe('build/create, build/deposit, build/confirm-milestone', () => {
+    const endpoints = [
+      { path: 'build/create', body: { hostWallet: 'GHOST', assetAddress: 'GASSET', milestones: [{ description: 'm1', amount: 100 }] } },
+      { path: 'build/deposit', body: { escrowId: 1 } },
+      { path: 'build/confirm-milestone', body: { escrowId: 1, milestoneIndex: 0 } },
+    ];
+
+    it.each(endpoints)('rejects $path without wallet auth', async ({ path, body }) => {
+      await request(app.getHttpServer())
+        .post(`/v1/escrows/${path}`)
+        .send({ renterWallet: 'GRENTER', ...body })
+        .expect(401);
+    });
+
+    it.each(endpoints)(
+      'rejects $path when renterWallet does not match the authenticated wallet',
+      async ({ path, body }) => {
+        const kp = Keypair.random();
+        await request(app.getHttpServer())
+          .post(`/v1/escrows/${path}`)
+          .set(await authHeaders(kp))
+          .send({ renterWallet: 'GSOMEONE-ELSE', ...body })
+          .expect(403);
+      },
+    );
   });
 });
