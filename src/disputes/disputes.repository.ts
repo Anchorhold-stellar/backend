@@ -35,4 +35,13 @@ export class DisputesRepository {
     );
     return rows[0];
   }
+
+  async markResolved(escrowId: string, outcome: string) {
+    const { rows } = await this.pool.query(
+      `UPDATE disputes SET resolved = true, outcome = $2, resolved_at = now()
+       WHERE escrow_id = $1 RETURNING *`,
+      [escrowId, outcome],
+    );
+    return rows[0] ?? null;
+  }
 }

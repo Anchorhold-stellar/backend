@@ -42,4 +42,12 @@ export class EscrowRepository {
     );
     return rows;
   }
+
+  async updateStatus(escrowId: string, status: string) {
+    const { rows } = await this.pool.query(
+      `UPDATE escrows SET status = $2, updated_at = now() WHERE escrow_id = $1 RETURNING *`,
+      [escrowId, status],
+    );
+    return rows[0] ?? null;
+  }
 }
