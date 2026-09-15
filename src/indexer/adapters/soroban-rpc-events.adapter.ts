@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { rpc, scValToNative, xdr } from '@stellar/stellar-sdk';
-import { ChainEvent } from '../chain-event';
+import { ChainEvent, MilestoneDefinition } from '../chain-event';
 import { SorobanEventsPort } from '../ports/soroban-events.port';
 
 interface RawContractEvent {
@@ -63,6 +63,7 @@ export class SorobanRpcEventsAdapter implements SorobanEventsPort {
             host: String(payload.host),
             asset: String(payload.asset),
             totalAmount: String(payload.totalAmount),
+            milestones: this.decodeMilestones(payload.milestones),
           };
         case 'escrow_funded':
           return {
@@ -113,5 +114,17 @@ export class SorobanRpcEventsAdapter implements SorobanEventsPort {
       );
       return null;
     }
+  }
+
+  private decodeMilestones(raw: unknown): MilestoneDefinition[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw.map((m: Record<string, unknown>, i) => ({
+      index: Number(m.index ?? i),
+      description: String(m.description),
+      amount: String(m.amount),
+      autoReleaseAt: m.autoReleaseAt ? String(m.autoReleaseAt) : undefined,
+    }));
   }
 }

@@ -19,6 +19,7 @@ export class MockEventsAdapter implements SorobanEventsPort {
       host: 'GHOSTMOCKWALLETBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
       asset: 'GASSETMOCKCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC',
       totalAmount: '1000',
+      milestones: [{ index: 0, description: 'delivery', amount: '1000' }],
     },
     { type: 'escrow_funded', ledger: 2, escrowId: 1 },
     {

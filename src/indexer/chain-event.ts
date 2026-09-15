@@ -1,3 +1,10 @@
+export interface MilestoneDefinition {
+  index: number;
+  description: string;
+  amount: string;
+  autoReleaseAt?: string;
+}
+
 export type ChainEvent =
   | {
       type: 'escrow_created';
@@ -7,6 +14,7 @@ export type ChainEvent =
       host: string;
       asset: string;
       totalAmount: string;
+      milestones: MilestoneDefinition[];
     }
   | {
       type: 'escrow_funded';

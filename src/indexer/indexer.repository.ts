@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_POOL } from '../database/pg-pool.provider';
+import { MilestoneDefinition } from './chain-event';
 
 @Injectable()
 export class IndexerRepository {
@@ -26,6 +27,7 @@ export class IndexerRepository {
     host: string,
     asset: string,
     totalAmount: string,
+    milestones: MilestoneDefinition[],
   ) {
     await this.pool.query(
       `INSERT INTO escrows (escrow_id, renter_wallet, host_wallet, asset_address, total_amount, status)
@@ -33,6 +35,25 @@ export class IndexerRepository {
        ON CONFLICT (escrow_id) DO NOTHING`,
       [escrowId, renter, host, asset, totalAmount],
     );
+
+    // Without this, the milestones table never gets a row for this escrow
+    // at all -- GET /escrows/:id would report milestones: [] forever, the
+    // auto-release cron would never find anything to release, and a
+    // later milestone_released event would silently UPDATE zero rows.
+    for (const milestone of milestones) {
+      await this.pool.query(
+        `INSERT INTO milestones (escrow_id, milestone_index, description, amount, auto_release_at)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (escrow_id, milestone_index) DO NOTHING`,
+        [
+          escrowId,
+          milestone.index,
+          milestone.description,
+          milestone.amount,
+          milestone.autoReleaseAt ?? null,
+        ],
+      );
+    }
   }
 
   async fundEscrow(escrowId: number) {
