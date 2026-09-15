@@ -34,6 +34,14 @@ jobs:
 
       - run: npm ci
 
+      - name: Audit dependencies (informational)
+        # Non-blocking on purpose: several current advisories only have
+        # fixes via --force (breaking major-version bumps to @nestjs/cli,
+        # @nestjs/schedule, @stellar/stellar-sdk) that need to be upgraded
+        # and re-tested deliberately, not as a side effect of an unrelated
+        # PR failing CI. This keeps the findings visible without blocking.
+        run: npm audit --audit-level=high || true
+
       - run: npm run lint
 
       - run: npm run build
