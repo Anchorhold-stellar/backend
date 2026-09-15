@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { WebhooksService } from './webhooks.service';
 import { KeeperPingDto } from './dto/keeper-ping.dto';
 import { HmacGuard } from './guards/hmac.guard';
@@ -13,6 +14,7 @@ import { HmacGuard } from './guards/hmac.guard';
  * for on-chain state; this endpoint is only for out-of-band signals that
  * don't come from contract events.
  */
+@ApiTags('webhooks')
 @Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly webhooks: WebhooksService) {}
