@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { DisputesService } from '../disputes/disputes.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ChainEvent } from './chain-event';
 import { IndexerRepository } from './indexer.repository';
 import { SOROBAN_EVENTS_PORT, SorobanEventsPort } from './ports/soroban-events.port';
@@ -22,6 +23,7 @@ export class IndexerService {
     @Inject(SOROBAN_EVENTS_PORT) private readonly eventsPort: SorobanEventsPort,
     private readonly indexer: IndexerRepository,
     private readonly disputes: DisputesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   @Interval(DEFAULT_POLL_INTERVAL_MS)
@@ -68,7 +70,9 @@ export class IndexerService {
           event.totalAmount,
         );
       case 'escrow_funded':
-        return this.indexer.fundEscrow(event.escrowId);
+        await this.indexer.fundEscrow(event.escrowId);
+        await this.notifications.notify('escrow_funded', { escrowId: event.escrowId });
+        return;
       case 'milestone_released':
         await this.indexer.releaseMilestone(event.escrowId, event.milestoneIndex);
         if (event.escrowCompleted) {
@@ -76,12 +80,18 @@ export class IndexerService {
         }
         return;
       case 'dispute_opened':
-        return this.indexer.openDispute(
+        await this.indexer.openDispute(
           event.escrowId,
           event.milestoneIndex,
           event.openedBy,
           event.evidenceUri,
         );
+        await this.notifications.notify('dispute_opened', {
+          escrowId: event.escrowId,
+          milestoneIndex: event.milestoneIndex,
+          openedBy: event.openedBy,
+        });
+        return;
       case 'dispute_voted':
         return this.disputes.recordVote(
           event.escrowId,
@@ -89,7 +99,12 @@ export class IndexerService {
           event.voteForRenter,
         );
       case 'dispute_resolved':
-        return this.disputes.applyResolution(String(event.escrowId), event.outcome);
+        await this.disputes.applyResolution(String(event.escrowId), event.outcome);
+        await this.notifications.notify('dispute_resolved', {
+          escrowId: event.escrowId,
+          outcome: event.outcome,
+        });
+        return;
       default:
         this.logger.warn(`unrecognized event type: ${(event as ChainEvent).type}`);
     }

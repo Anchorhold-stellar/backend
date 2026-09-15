@@ -12,17 +12,22 @@ describe('IndexerService', () => {
       completeEscrow: jest.fn(async () => undefined),
       openDispute: jest.fn(async () => undefined),
     };
-    const disputes = { applyResolution: jest.fn(async () => undefined) };
+    const disputes = {
+      applyResolution: jest.fn(async () => undefined),
+      recordVote: jest.fn(async () => undefined),
+    };
+    const notifications = { notify: jest.fn(async () => undefined) };
     const service = new IndexerService(
       new MockEventsAdapter(),
       indexerRepo as never,
       disputes as never,
+      notifications as never,
     );
-    return { service, indexerRepo, disputes };
+    return { service, indexerRepo, disputes, notifications };
   }
 
   it('applies every fixture event in order and advances the cursor', async () => {
-    const { service, indexerRepo } = makeService();
+    const { service, indexerRepo, notifications } = makeService();
 
     const count = await service.pollOnce();
 
@@ -37,6 +42,7 @@ describe('IndexerService', () => {
     expect(indexerRepo.fundEscrow).toHaveBeenCalledWith(1);
     expect(indexerRepo.releaseMilestone).toHaveBeenCalledWith(1, 0);
     expect(indexerRepo.setLastLedger).toHaveBeenCalledWith(3);
+    expect(notifications.notify).toHaveBeenCalledWith('escrow_funded', { escrowId: 1 });
   });
 
   it('does not reprocess events once the cursor has passed them', async () => {
