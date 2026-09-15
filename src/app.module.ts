@@ -9,6 +9,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { ListingsModule } from './listings/listings.module';
 import { AuthModule } from './auth/auth.module';
 import { JurorsModule } from './jurors/jurors.module';
+import { ReputationModule } from './reputation/reputation.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -22,6 +23,7 @@ import { validateEnv } from './config/env.validation';
     ListingsModule,
     AuthModule,
     JurorsModule,
+    ReputationModule,
   ],
   controllers: [AppController],
 })
