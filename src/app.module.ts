@@ -14,14 +14,17 @@ import { AuthModule } from './auth/auth.module';
 import { JurorsModule } from './jurors/jurors.module';
 import { ReputationModule } from './reputation/reputation.module';
 import { HealthModule } from './health/health.module';
+import { IndexerStatusModule } from './indexer-status/indexer-status.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { validateEnv } from './config/env.validation';
 
-// Note: IndexerModule is intentionally NOT imported here. It runs as its
-// own process via `npm run start:indexer` (see src/indexer/indexer.main.ts),
-// matching the original design — polling and applying chain events is kept
-// out of the HTTP request path, and importing it here too would mean two
-// pollers racing over the same indexer_cursor row.
+// Note: IndexerModule (the actual polling loop) is intentionally NOT
+// imported here. It runs as its own process via `npm run start:indexer`
+// (see src/indexer/indexer.main.ts), matching the original design —
+// polling and applying chain events is kept out of the HTTP request path,
+// and importing it here too would mean two pollers racing over the same
+// indexer_cursor row. IndexerStatusModule is a separate, read-only module
+// that just reports on that same row (see GET /indexer/status).
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
@@ -48,6 +51,7 @@ import { validateEnv } from './config/env.validation';
     JurorsModule,
     ReputationModule,
     HealthModule,
+    IndexerStatusModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
