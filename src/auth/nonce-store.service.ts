@@ -19,7 +19,12 @@ export class NonceStoreService {
   private readonly ttlMs: number;
 
   constructor(config: ConfigService) {
-    this.ttlMs = config.get<number>('AUTH_NONCE_TTL_MS') ?? 5 * 60 * 1000;
+    // ConfigService.get<number>() doesn't coerce -- it returns the raw env
+    // string with a type assertion. Date.now() + "300000" is string
+    // concatenation, not addition, which would make expiresAt an enormous
+    // string that never compares as "in the past" -- nonces would never
+    // expire. Number() it explicitly.
+    this.ttlMs = Number(config.get<string>('AUTH_NONCE_TTL_MS')) || 5 * 60 * 1000;
   }
 
   issue(wallet: string): StoredNonce {

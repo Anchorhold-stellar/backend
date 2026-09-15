@@ -46,4 +46,18 @@ describe('NonceStoreService', () => {
     expect(first.nonce).not.toBe(second.nonce);
     expect(store.peek('GWALLET')).toBe(second.nonce);
   });
+
+  it('expires correctly when AUTH_NONCE_TTL_MS is a string, as a real env var always is', () => {
+    // Regression test: a real process.env value is always a string.
+    // Date.now() + "1000" is string concatenation, not addition -- without
+    // Number() coercion, expiresAt becomes a huge string that never
+    // compares as "in the past", so the nonce would never expire.
+    jest.useFakeTimers();
+    const store = new NonceStoreService(new ConfigService({ AUTH_NONCE_TTL_MS: '1000' }));
+    store.issue('GWALLET');
+
+    jest.advanceTimersByTime(1001);
+
+    expect(store.peek('GWALLET')).toBeNull();
+  });
 });
