@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -14,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { JurorsModule } from './jurors/jurors.module';
 import { ReputationModule } from './reputation/reputation.module';
 import { HealthModule } from './health/health.module';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { validateEnv } from './config/env.validation';
 
 // Note: IndexerModule is intentionally NOT imported here. It runs as its
@@ -40,4 +41,8 @@ import { validateEnv } from './config/env.validation';
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}
