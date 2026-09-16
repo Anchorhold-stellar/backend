@@ -15,6 +15,13 @@ async function bootstrap() {
   const corsOrigin = app.get(ConfigService).get<string>('CORS_ORIGIN');
   app.enableCors({
     origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()) : true,
+    // Browsers only expose a small safelist of response headers to JS on
+    // cross-origin requests (Content-Type, Content-Length, etc.) unless a
+    // header is explicitly listed here -- without this, every list
+    // endpoint's X-Total-Count (the entire pagination mechanism
+    // documented in common/pagination.ts) is invisible to any real
+    // browser-based frontend, even though curl/Postman show it fine.
+    exposedHeaders: ['X-Total-Count'],
   });
   app.enableShutdownHooks();
   // Swagger UI at /docs needs inline scripts/styles; helmet's default CSP
