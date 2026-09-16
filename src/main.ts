@@ -26,7 +26,7 @@ async function bootstrap() {
   applyGlobalMiddleware(app);
 
   const config = new DocumentBuilder()
-    .setTitle('SafeTrust v2 API')
+    .setTitle('AnchorHold API')
     .setDescription(
       'Stellar/Soroban-based escrow and dispute-resolution marketplace backend.',
     )

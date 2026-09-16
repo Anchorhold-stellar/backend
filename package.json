@@ -1,5 +1,5 @@
 {
-  "name": "@safetrust-v2/backend",
+  "name": "@anchorhold/backend",
   "version": "0.2.0",
   "private": true,
   "engines": {
