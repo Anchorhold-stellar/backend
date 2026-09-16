@@ -29,6 +29,29 @@ export class MockEventsAdapter implements SorobanEventsPort {
       milestoneIndex: 0,
       escrowCompleted: false,
     },
+    {
+      type: 'dispute_opened',
+      ledger: 4,
+      escrowId: 1,
+      milestoneIndex: 0,
+      openedBy: 'GRENTERMOCKWALLETAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      evidenceUri: 'ipfs://mock-evidence',
+    },
+    {
+      type: 'dispute_voted',
+      ledger: 5,
+      escrowId: 1,
+      milestoneIndex: 0,
+      jurorWallet: 'GJURORMOCKWALLETDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',
+      voteForRenter: false,
+    },
+    {
+      type: 'dispute_resolved',
+      ledger: 6,
+      escrowId: 1,
+      milestoneIndex: 0,
+      outcome: 'host_wins',
+    },
   ];
 
   async fetchEventsSince(lastLedger: number): Promise<ChainEvent[]> {

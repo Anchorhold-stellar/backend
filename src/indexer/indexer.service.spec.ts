@@ -31,11 +31,11 @@ describe('IndexerService', () => {
   }
 
   it('applies every fixture event in order and advances the cursor', async () => {
-    const { service, indexerRepo, notifications } = makeService();
+    const { service, indexerRepo, disputes, notifications } = makeService();
 
     const count = await service.pollOnce();
 
-    expect(count).toBe(3);
+    expect(count).toBe(6);
     expect(indexerRepo.createEscrow).toHaveBeenCalledWith(
       1,
       expect.any(String),
@@ -47,13 +47,36 @@ describe('IndexerService', () => {
     );
     expect(indexerRepo.fundEscrow).toHaveBeenCalledWith(1);
     expect(indexerRepo.releaseMilestone).toHaveBeenCalledWith(1, 0);
-    expect(indexerRepo.setLastLedger).toHaveBeenCalledWith(3);
+    expect(indexerRepo.openDispute).toHaveBeenCalledWith(
+      1,
+      0,
+      'GRENTERMOCKWALLETAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      'ipfs://mock-evidence',
+    );
+    expect(disputes.recordVote).toHaveBeenCalledWith(
+      1,
+      0,
+      'GJURORMOCKWALLETDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',
+      false,
+    );
+    expect(disputes.applyResolution).toHaveBeenCalledWith('1', 0, 'host_wins');
+    expect(indexerRepo.setLastLedger).toHaveBeenCalledWith(6);
     expect(notifications.notify).toHaveBeenCalledWith('escrow_funded', { escrowId: 1 });
+    expect(notifications.notify).toHaveBeenCalledWith('dispute_opened', {
+      escrowId: 1,
+      milestoneIndex: 0,
+      openedBy: 'GRENTERMOCKWALLETAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+    });
+    expect(notifications.notify).toHaveBeenCalledWith('dispute_resolved', {
+      escrowId: 1,
+      milestoneIndex: 0,
+      outcome: 'host_wins',
+    });
   });
 
   it('does not reprocess events once the cursor has passed them', async () => {
     const { service, indexerRepo } = makeService();
-    indexerRepo.getLastLedger.mockResolvedValue(3);
+    indexerRepo.getLastLedger.mockResolvedValue(6);
 
     const count = await service.pollOnce();
 
