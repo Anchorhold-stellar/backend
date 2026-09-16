@@ -21,6 +21,19 @@ export class IndexerRepository {
     );
   }
 
+  /**
+   * Bumps updated_at without moving last_ledger -- called after a poll
+   * cycle that found no new events. Without this, GET /indexer/status
+   * (indexer-status/indexer-status.service.ts) treats "no on-chain
+   * activity recently" the same as "the indexer stopped working",
+   * since both leave updated_at frozen. A quiet chain is normal; a dead
+   * poller isn't, and the staleness check needs to be able to tell them
+   * apart.
+   */
+  async touchCursor(): Promise<void> {
+    await this.pool.query(`UPDATE indexer_cursor SET updated_at = now() WHERE id = 1`);
+  }
+
   async createEscrow(
     escrowId: number,
     renter: string,

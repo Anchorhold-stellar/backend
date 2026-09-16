@@ -7,6 +7,7 @@ describe('IndexerService', () => {
     const indexerRepo = {
       getLastLedger: jest.fn(async () => 0),
       setLastLedger: jest.fn(async () => undefined),
+      touchCursor: jest.fn(async () => undefined),
       createEscrow: jest.fn(async () => undefined),
       fundEscrow: jest.fn(async () => undefined),
       releaseMilestone: jest.fn(async () => undefined),
@@ -61,6 +62,7 @@ describe('IndexerService', () => {
     );
     expect(disputes.applyResolution).toHaveBeenCalledWith('1', 0, 'host_wins');
     expect(indexerRepo.setLastLedger).toHaveBeenCalledWith(6);
+    expect(indexerRepo.touchCursor).not.toHaveBeenCalled();
     expect(notifications.notify).toHaveBeenCalledWith('escrow_funded', { escrowId: 1 });
     expect(notifications.notify).toHaveBeenCalledWith('dispute_opened', {
       escrowId: 1,
@@ -74,7 +76,7 @@ describe('IndexerService', () => {
     });
   });
 
-  it('does not reprocess events once the cursor has passed them', async () => {
+  it('does not reprocess events once the cursor has passed them, but still heartbeats', async () => {
     const { service, indexerRepo } = makeService();
     indexerRepo.getLastLedger.mockResolvedValue(6);
 
@@ -83,6 +85,10 @@ describe('IndexerService', () => {
     expect(count).toBe(0);
     expect(indexerRepo.createEscrow).not.toHaveBeenCalled();
     expect(indexerRepo.setLastLedger).not.toHaveBeenCalled();
+    // A poll cycle that finds nothing new must still bump updated_at --
+    // otherwise GET /indexer/status can't distinguish "chain is quiet"
+    // from "poller died" (see IndexerRepository.touchCursor).
+    expect(indexerRepo.touchCursor).toHaveBeenCalled();
   });
 
   describe('onModuleInit', () => {

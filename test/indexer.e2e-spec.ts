@@ -121,4 +121,22 @@ describeIfDb('Indexer pipeline (e2e, real Postgres)', () => {
     );
     expect(renterRep[0].score).toBe(-5);
   });
+
+  it('bumps updated_at even when a poll cycle finds no new events', async () => {
+    // Regression test: setLastLedger only ran (and only it touched
+    // updated_at) when events.length > 0, so a poll cycle that legitimately
+    // found nothing new -- the normal steady state once caught up -- left
+    // updated_at frozen. GET /indexer/status would then eventually report
+    // stale:true for a perfectly healthy indexer, indistinguishable from
+    // one whose polling loop actually died.
+    await reset();
+    await pool.query(`UPDATE indexer_cursor SET last_ledger = 6, updated_at = now() - interval '1 hour' WHERE id = 1`);
+
+    const processed = await indexer.pollOnce();
+    expect(processed).toBe(0); // cursor is already past every mock fixture
+
+    const { rows } = await pool.query(`SELECT updated_at FROM indexer_cursor WHERE id = 1`);
+    const ageMs = Date.now() - new Date(rows[0].updated_at).getTime();
+    expect(ageMs).toBeLessThan(60_000);
+  });
 });

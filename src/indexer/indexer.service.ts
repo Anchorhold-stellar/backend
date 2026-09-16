@@ -72,6 +72,11 @@ export class IndexerService implements OnModuleInit {
     if (events.length > 0) {
       const newCursor = events[events.length - 1].ledger;
       await this.indexer.setLastLedger(newCursor);
+    } else {
+      // A quiet chain with nothing new to index is normal and must not
+      // look identical to a dead poller to GET /indexer/status -- see
+      // IndexerRepository.touchCursor.
+      await this.indexer.touchCursor();
     }
 
     return events.length;
