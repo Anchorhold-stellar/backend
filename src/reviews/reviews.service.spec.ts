@@ -13,11 +13,18 @@ describe('ReviewsService', () => {
     };
     const escrows = { findById: jest.fn().mockResolvedValue(escrow) };
     const reputation = { adjustScore: jest.fn() };
+    const notifications = { notify: jest.fn() };
     return {
-      service: new ReviewsService(reviews as never, escrows as never, reputation as never),
+      service: new ReviewsService(
+        reviews as never,
+        escrows as never,
+        reputation as never,
+        notifications as never,
+      ),
       reviews,
       escrows,
       reputation,
+      notifications,
     };
   }
 
