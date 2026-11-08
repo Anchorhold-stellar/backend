@@ -13,6 +13,7 @@ import { ListingsModule } from './listings/listings.module';
 import { AuthModule } from './auth/auth.module';
 import { JurorsModule } from './jurors/jurors.module';
 import { ReputationModule } from './reputation/reputation.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { HealthModule } from './health/health.module';
 import { IndexerStatusModule } from './indexer-status/indexer-status.module';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
@@ -50,6 +51,7 @@ import { validateEnv } from './config/env.validation';
     AuthModule,
     JurorsModule,
     ReputationModule,
+    ReviewsModule,
     HealthModule,
     IndexerStatusModule,
   ],
