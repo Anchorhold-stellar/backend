@@ -67,6 +67,7 @@ or local runs of `npm test` never depend on Docker being available.
 | `listings` | Listings CRUD (soft-delete) |
 | `jurors` | Juror registration/staking |
 | `reputation` | Reputation read + leaderboard + internal adjustment API |
+| `reviews` | Bilateral post-completion escrow reviews (1–5 stars + comment), per-wallet summary |
 | `auth` | Wallet-signature challenge/verify, `WalletAuthGuard` |
 | `webhooks` | Out-of-band keeper-ping, HMAC-verified |
 | `notifications` | Configurable outbound webhook fan-out on key domain events |
@@ -78,7 +79,7 @@ or local runs of `npm test` never depend on Docker being available.
 ## API conventions
 
 - **Pagination**: list endpoints (`GET /listings`, `/escrows`, `/disputes`,
-  `/jurors`, `/reputation`) take `page`/`limit` and return a bare array,
+  `/jurors`, `/reputation`, `/reviews`) take `page`/`limit` and return a bare array,
   with total matching rows in an `X-Total-Count` response header.
 - **Rate limiting**: a global limit applies to every route (default
   120req/60s, configurable via `THROTTLE_TTL_MS`/`THROTTLE_LIMIT`);
