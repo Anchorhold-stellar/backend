@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EscrowRepository } from '../escrow/escrow.repository';
+import { ReputationService } from '../reputation/reputation.service';
 import { ReviewsRepository } from './reviews.repository';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ListReviewsQueryDto } from './dto/list-reviews-query.dto';
@@ -21,6 +22,7 @@ export class ReviewsService {
   constructor(
     private readonly reviews: ReviewsRepository,
     private readonly escrows: EscrowRepository,
+    private readonly reputation: ReputationService,
   ) {}
 
   findByEscrow(escrowId: string) {
@@ -67,6 +69,17 @@ export class ReviewsService {
       throw new ConflictException('you have already reviewed this escrow');
     }
 
-    return this.reviews.create(escrowId, reviewerWallet, dto);
+    const review = await this.reviews.create(escrowId, reviewerWallet, dto);
+
+    // High ratings are a positive reputation signal, low ratings a negative
+    // one; a middle-of-the-road 3 leaves the score untouched. Kept small
+    // relative to dispute outcomes (±10/−5) so a single review can't swamp
+    // adjudicated history.
+    const delta = dto.rating - 3;
+    if (delta !== 0) {
+      await this.reputation.adjustScore(dto.revieweeWallet, delta);
+    }
+
+    return review;
   }
 }
