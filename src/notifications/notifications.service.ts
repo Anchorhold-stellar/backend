@@ -4,7 +4,8 @@ import { ConfigService } from '@nestjs/config';
 export type NotificationEvent =
   | 'escrow_funded'
   | 'dispute_opened'
-  | 'dispute_resolved';
+  | 'dispute_resolved'
+  | 'review_submitted';
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 

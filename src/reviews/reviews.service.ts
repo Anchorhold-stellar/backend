@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { EscrowRepository } from '../escrow/escrow.repository';
 import { ReputationService } from '../reputation/reputation.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ReviewsRepository } from './reviews.repository';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ListReviewsQueryDto } from './dto/list-reviews-query.dto';
@@ -23,6 +24,7 @@ export class ReviewsService {
     private readonly reviews: ReviewsRepository,
     private readonly escrows: EscrowRepository,
     private readonly reputation: ReputationService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   findByEscrow(escrowId: string) {
@@ -79,6 +81,13 @@ export class ReviewsService {
     if (delta !== 0) {
       await this.reputation.adjustScore(dto.revieweeWallet, delta);
     }
+
+    await this.notifications.notify('review_submitted', {
+      escrowId,
+      reviewerWallet,
+      revieweeWallet: dto.revieweeWallet,
+      rating: dto.rating,
+    });
 
     return review;
   }
